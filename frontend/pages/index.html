@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PicMe - Find Your Event Photos Automatically</title>
-    <link rel="stylesheet" href="css/main.css">
+   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -15,7 +15,10 @@
             transition: all 0.3s ease-in-out;
         }
     </style>
+
 </head>
+ <script src="{{ url_for('static', filename='js/qr-scanner.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/camera.js') }}"></script>
 <body class="bg-gray-50">
     <!-- Minimal Navigation -->
     <nav class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200">

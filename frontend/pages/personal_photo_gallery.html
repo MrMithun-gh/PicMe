@@ -4,9 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Photos - PicMe</title>
-    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+
     <script src="../js/gallery.js" defer></script>
 </head>
+<script src="{{ url_for('static', filename='js/gallery.js') }}"></script>
+
 <body class="bg-background">
     <!-- Navigation Header -->
     <nav class="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-md border-b border-gray-200">
