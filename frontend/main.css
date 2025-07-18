@@ -1,0 +1,52 @@
+/* Base styles */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom animations */
+@keyframes scan-line {
+    0% { top: 0; }
+    50% { top: calc(100% - 4px); }
+    100% { top: 0; }
+}
+
+@keyframes pulse-biometric {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
+/* Custom components */
+.btn-primary {
+    @apply bg-accent text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors;
+}
+
+.btn-secondary {
+    @apply bg-white text-accent border border-accent px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors;
+}
+
+.card-elevated {
+    @apply bg-surface rounded-xl shadow-md hover:shadow-lg transition-shadow;
+}
+
+.input-field {
+    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-smooth;
+}
+
+/* Biometric scanner animation */
+.biometric-scanner {
+    @apply relative rounded-full;
+    animation: pulse-biometric 2s ease-in-out infinite;
+}
+
+/* Utility classes */
+.transition-smooth {
+    @apply transition-all duration-300 ease-in-out;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+    .biometric-scanner {
+        width: 80%;
+        height: 80%;
+    }
+}

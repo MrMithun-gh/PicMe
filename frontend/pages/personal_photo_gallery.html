@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Photos - PicMe</title>
+    <link rel="stylesheet" href="../css/main.css">
+    <script src="../js/gallery.js" defer></script>
+</head>
+<body class="bg-background">
+    <!-- Navigation Header -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-md border-b border-gray-200">
+        <!-- ... your existing nav code ... -->
+    </nav>
+
+    <main class="pt-16 min-h-screen">
+        <!-- Gallery Header -->
+        <section class="py-12 bg-gradient-to-br from-primary to-secondary text-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h1 class="text-4xl md:text-6xl font-bold mb-6 font-accent">My Event Photos</h1>
+                    <p class="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
+                        Your personal and group photos from the event
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Photo Galleries -->
+        <section class="py-12 bg-background">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <!-- Individual Photos -->
+                <div class="mb-16">
+                    <h2 class="text-2xl font-bold text-text-primary mb-8 flex items-center">
+                        <svg class="w-6 h-6 text-accent mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                        Individual Photos
+                    </h2>
+                    <div id="individual-photos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Photos will be loaded here by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Group Photos -->
+                <div class="mb-16">
+                    <h2 class="text-2xl font-bold text-text-primary mb-8 flex items-center">
+                        <svg class="w-6 h-6 text-accent mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                        Group Photos
+                    </h2>
+                    <div id="group-photos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Photos will be loaded here by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Download All Button -->
+                <div class="text-center">
+                    <button id="download-all-btn" class="btn-primary px-8 py-3 text-lg">
+                        <svg class="w-6 h-6 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        Download All Photos
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-primary text-white py-16">
+        <!-- ... your existing footer code ... -->
+    </footer>
+
+    <script>
+        // Set up download all button
+        document.getElementById('download-all-btn')?.addEventListener('click', function() {
+            const personId = sessionStorage.getItem('picme_person_id');
+            const eventId = sessionStorage.getItem('picme_event_id');
+            
+            if (personId && eventId) {
+                window.open(`http://localhost:5000/download-all/${eventId}/${personId}`, '_blank');
+            } else {
+                alert('Please scan your face first to access photos');
+                window.location.href = 'biometric_authentication_portal.html';
+            }
+        });
+    </script>
+</body>
+</html>
