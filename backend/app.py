@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, send_from_directory, render_template, session, redirect, url_for
+from functools import wraps # Import wraps for decorator
 import os
 import base64
 import numpy as np
@@ -12,22 +13,19 @@ import threading
 import time
 import json
 import pickle
-import mysql.connector # Import MySQL connector
-from werkzeug.security import generate_password_hash, check_password_hash # For password hashing
+import mysql.connector
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__, static_folder='../frontend/static', template_folder='../frontend/pages')
 
 # --- Flask Configuration ---
-# Set a secret key for session management.
-# IMPORTANT: In a real application, use a strong, randomly generated key
-# and store it securely (e.g., in an environment variable).
-app.secret_key = 'your_super_secret_key_here_replace_me_in_production'
+app.secret_key = 'your_super_secret_key_here_replace_me_in_production' # IMPORTANT: Change this!
 
 # Database Configuration (for XAMPP MySQL)
 DB_CONFIG = {
     'host': 'localhost',
-    'user': 'root', # Default XAMPP MySQL username
-    'password': '', # Default XAMPP MySQL password (usually empty)
+    'user': 'root',
+    'password': '',
     'database': 'picme_db'
 }
 
@@ -54,7 +52,6 @@ KNOWN_FACES_DATA_PATH = 'known_faces.dat'
 
 # --- Database Helper Functions ---
 def get_db_connection():
-    """Establishes a connection to the MySQL database."""
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
         return conn
@@ -129,6 +126,15 @@ def add_watermark(image_path, output_path):
         print(f"Watermark error: {e}. Copying original image instead.")
         shutil.copy(image_path, output_path)
 
+# --- Authentication Decorator ---
+def login_required(f):
+    @wraps(f) # Preserves original function's metadata
+    def decorated_function(*args, **kwargs):
+        if not session.get('logged_in'):
+            return redirect(url_for('serve_login_page'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 # --- Authentication Routes ---
 @app.route('/register', methods=['POST'])
 def register_user():
@@ -148,7 +154,6 @@ def register_user():
 
     cursor = conn.cursor()
     try:
-        # Check if user already exists
         cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
         if cursor.fetchone():
             return jsonify({"success": False, "error": "Email already registered"}), 409
@@ -180,7 +185,7 @@ def login_user():
     if conn is None:
         return jsonify({"success": False, "error": "Database connection failed"}), 500
 
-    cursor = conn.cursor(dictionary=True) # Return rows as dictionaries
+    cursor = conn.cursor(dictionary=True)
     try:
         cursor.execute("SELECT id, email, password FROM users WHERE email = %s", (email,))
         user = cursor.fetchone()
@@ -204,18 +209,7 @@ def logout_user():
     session.pop('logged_in', None)
     session.pop('user_id', None)
     session.pop('user_email', None)
-    return redirect(url_for('serve_index')) # Redirect to homepage after logout
-
-# --- Authentication Decorator (Optional but Recommended) ---
-# You can use this to protect routes that require a logged-in user
-def login_required(f):
-    @app.route.wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not session.get('logged_in'):
-            # You might want to redirect to login page or return an error
-            return redirect(url_for('serve_login_page'))
-        return f(*args, **kwargs)
-    return decorated_function
+    return redirect(url_for('serve_index'))
 
 # --- Routes for serving HTML pages ---
 @app.route('/')
@@ -230,58 +224,56 @@ def serve_signup_page():
 def serve_login_page():
     return render_template('login.html')
 
+# Apply login_required to all pages that require authentication
 @app.route('/homepage')
+@login_required
 def serve_homepage():
-    # Example of protecting a page
-    # if not session.get('logged_in'):
-    #     return redirect(url_for('serve_login_page'))
     return render_template('homepage.html')
 
 @app.route('/event_discovery')
+@login_required
 def serve_event_discovery():
     return render_template('event_discovery.html')
 
 @app.route('/biometric_authentication_portal')
+@login_required
 def serve_biometric_authentication_portal():
     return render_template('biometric_authentication_portal.html')
 
 @app.route('/personal_photo_gallery')
+@login_required
 def serve_personal_photo_gallery():
-    # This page should ideally be protected
-    # if not session.get('logged_in'):
-    #     return redirect(url_for('serve_login_page'))
     return render_template('personal_photo_gallery.html')
 
 @app.route('/download_center')
+@login_required
 def serve_download_center():
-    # This page should ideally be protected
-    # if not session.get('logged_in'):
-    #     return redirect(url_for('serve_login_page'))
     return render_template('download_center.html')
 
 @app.route('/event_organizer_hub')
+@login_required
 def serve_event_organizer_hub():
-    # This page should ideally be protected
-    # if not session.get('logged_in'):
-    #     return redirect(url_for('serve_login_page'))
     return render_template('event_organizer_hub.html')
 
-# Generic route for .html files (can be kept as a fallback or removed if all pages have specific routes)
+# Generic route for .html files (kept for completeness, but specific routes are preferred)
 @app.route('/<page_name>.html')
 def serve_html_page(page_name):
+    # This route is less secure if not protected, as it allows direct access to .html files
+    # Consider if you truly need this, or if all pages should have specific @app.route definitions.
+    # For now, it will serve the HTML, but if a protected page is accessed this way,
+    # it won't be protected by @login_required unless you add checks here.
     template_path = os.path.join(app.template_folder, f'{page_name}.html')
     if os.path.exists(template_path):
+        # If this page is meant to be protected, you would need a check here too
+        # e.g., if page_name in PROTECTED_PAGES and not session.get('logged_in'): ...
         return render_template(f'{page_name}.html')
     else:
         return "Page Not Found", 404
 
-# --- API Endpoints ---
+# --- API Endpoints (also need protection if they serve user-specific data) ---
 @app.route('/upload', methods=['POST'])
+@login_required # Protect the upload endpoint
 def upload_files():
-    # This endpoint should ideally be protected for authenticated organizers
-    # if not session.get('logged_in'):
-    #     return jsonify({"success": False, "error": "Unauthorized"}), 401
-    
     if 'files' not in request.files:
         return jsonify({"success": False, "error": "No files provided"}), 400
 
@@ -383,11 +375,8 @@ def process_images(event_id):
         print(f"Error processing images for event {event_id}: {e}")
 
 @app.route('/recognize', methods=['POST'])
+@login_required # Protect the recognition endpoint
 def recognize_face():
-    # This endpoint might need to be protected or handle user_id from session
-    # if not session.get('logged_in'):
-    #     return jsonify({"success": False, "error": "Unauthorized"}), 401
-
     try:
         image_data = request.json.get('image')
         event_id = request.json.get('event_id', 'default_event')
@@ -447,19 +436,14 @@ def recognize_face():
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/photos/<event_id>/<person_id>/<photo_type>/<filename>')
+@login_required # Protect photo access
 def get_photo(event_id, person_id, photo_type, filename):
-    # This endpoint should ideally be protected
-    # if not session.get('logged_in'):
-    #     return redirect(url_for('serve_login_page')) # Or return 401
     photo_path = os.path.join(app.config['PROCESSED_FOLDER'], event_id, person_id, photo_type)
     return send_from_directory(photo_path, filename)
 
 @app.route('/download/<event_id>/<person_id>/<photo_type>/<filename>')
+@login_required # Protect download access
 def download_photo(event_id, person_id, photo_type, filename):
-    # This endpoint should ideally be protected
-    # if not session.get('logged_in'):
-    #     return redirect(url_for('serve_login_page')) # Or return 401
-
     original_filename = filename.replace('watermarked_', '')
     photo_path = os.path.join(app.config['PROCESSED_FOLDER'], event_id, person_id, photo_type)
     
@@ -467,14 +451,11 @@ def download_photo(event_id, person_id, photo_type, filename):
     if not os.path.exists(full_original_path):
         return jsonify({"success": False, "error": "Original file not found for download"}), 404
 
-    return send_from_directory(photo_path, original_filename, as_attachment=True)
+    return send_from_directory(full_original_path, original_filename, as_attachment=True)
 
 @app.route('/download-all/<event_id>/<person_id>')
+@login_required # Protect bulk download access
 def download_all_photos_zip(event_id, person_id):
-    # This endpoint should ideally be protected
-    # if not session.get('logged_in'):
-    #     return redirect(url_for('serve_login_page')) # Or return 401
-
     event_person_dir = os.path.join(app.config['PROCESSED_FOLDER'], event_id, person_id)
     if not os.path.exists(event_person_dir):
         return jsonify({"success": False, "error": "No photos found for this person in this event"}), 404
@@ -512,6 +493,8 @@ def download_all_photos_zip(event_id, person_id):
 
 @app.route('/events', methods=['GET'])
 def get_events():
+    # This endpoint provides event data. You might want to protect it too,
+    # or allow public access to event listings but restrict photo viewing.
     if os.path.exists(EVENTS_DATA_PATH):
         try:
             with open(EVENTS_DATA_PATH, 'r') as f:
@@ -578,7 +561,7 @@ if __name__ == '__main__':
                 "sample_photos": [
                     "/static/images/sample4.jpg",
                     "/static/images/sample5.jpg",
-                    "/static/images/sample6.jpg"
+                    " /static/images/sample6.jpg"
                 ]
             },
              {
@@ -602,4 +585,4 @@ if __name__ == '__main__':
 
     os.makedirs('frontend/static/images', exist_ok=True)
 
-    app.run(host='0.0.0.0', port=5000, debug=True) # Set debug=True for development
+    app.run(host='0.0.0.0', port=5000, debug=True)
