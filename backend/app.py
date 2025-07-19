@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw, ImageFont
 import threading
 import time
 import json
-import pickle # <--- ADD THIS LINE
+import pickle
 
 app = Flask(__name__, static_folder='../frontend/static', template_folder='../frontend/pages')
 
@@ -34,9 +34,10 @@ os.makedirs(PROCESSED_FOLDER, exist_ok=True)
 
 # Dummy data for events (replace with a database in production)
 EVENTS_DATA_PATH = 'events_data.json'
+KNOWN_FACES_DATA_PATH = 'known_faces.dat'
 
 # Load known faces from file on startup
-def load_all_known_faces(encodings_file='known_faces.dat'):
+def load_all_known_faces(encodings_file=KNOWN_FACES_DATA_PATH):
     if os.path.exists(encodings_file):
         try:
             with open(encodings_file, 'rb') as f:
@@ -45,14 +46,12 @@ def load_all_known_faces(encodings_file='known_faces.dat'):
             return known_encodings_loaded, known_ids_loaded
         except Exception as e:
             print(f"Error loading known faces from {encodings_file}: {e}. Starting fresh.")
-            # Optionally delete the corrupt file to prevent continuous errors
-            # os.remove(encodings_file)
             return [], []
     print(f"No known faces file found at {encodings_file}. Starting fresh.")
     return [], []
 
 # Save known faces to file
-def save_all_known_faces(encodings, ids, encodings_file='known_faces.dat'):
+def save_all_known_faces(encodings, ids, encodings_file=KNOWN_FACES_DATA_PATH):
     try:
         with open(encodings_file, 'wb') as f:
             pickle.dump((encodings, ids), f)
@@ -78,7 +77,6 @@ def add_watermark(image_path, output_path):
             # Use a default font (you might need to adjust this for your system)
             try:
                 # Attempt to load a common font, adjust path if necessary for your OS
-                # Common paths for Arial: C:\Windows\Fonts\arial.ttf on Windows
                 font_path = "arial.ttf" # Or provide full path like "C:/Windows/Fonts/arial.ttf"
                 font_size = int(min(width, height) / 20)
                 font = ImageFont.truetype(font_path, font_size)
@@ -88,7 +86,6 @@ def add_watermark(image_path, output_path):
                 font = ImageFont.load_default()
 
             # Ensure text_width and text_height are calculated correctly for the chosen font
-            # PIL changed textsize method. Use textbbox for newer versions.
             try:
                 # For Pillow 9.0.0 and later
                 bbox = draw.textbbox((0, 0), WATERMARK_TEXT, font=font)
@@ -114,21 +111,53 @@ def add_watermark(image_path, output_path):
         print(f"Watermark error: {e}. Copying original image instead.")
         shutil.copy(image_path, output_path)
 
+# --- Routes for serving HTML pages ---
 @app.route('/')
 def serve_index():
     return render_template('index.html')
 
+@app.route('/signup')
+def serve_signup_page():
+    return render_template('signup.html')
+
+@app.route('/login')
+def serve_login_page():
+    return render_template('login.html')
+
+@app.route('/homepage')
+def serve_homepage():
+    return render_template('homepage.html')
+
+@app.route('/event_discovery')
+def serve_event_discovery():
+    return render_template('event_discovery.html')
+
+@app.route('/biometric_authentication_portal')
+def serve_biometric_authentication_portal():
+    return render_template('biometric_authentication_portal.html')
+
+@app.route('/personal_photo_gallery')
+def serve_personal_photo_gallery():
+    return render_template('personal_photo_gallery.html')
+
+@app.route('/download_center')
+def serve_download_center():
+    return render_template('download_center.html')
+
+@app.route('/event_organizer_hub')
+def serve_event_organizer_hub():
+    return render_template('event_organizer_hub.html')
+
+# Generic route for .html files (can be kept as a fallback or removed if all pages have specific routes)
 @app.route('/<page_name>.html')
 def serve_html_page(page_name):
-    # This route serves all other HTML files in the 'pages' directory
-    # Ensure the file exists before attempting to render
     template_path = os.path.join(app.template_folder, f'{page_name}.html')
     if os.path.exists(template_path):
         return render_template(f'{page_name}.html')
     else:
-        # If the HTML file doesn't exist, return a 404
         return "Page Not Found", 404
 
+# --- API Endpoints ---
 @app.route('/upload', methods=['POST'])
 def upload_files():
     if 'files' not in request.files:
@@ -331,19 +360,12 @@ def download_photo(event_id, person_id, photo_type, filename):
     # Ensure the original file exists for download
     full_original_path = os.path.join(photo_path, original_filename)
     if not os.path.exists(full_original_path):
-        # Fallback: if 'watermarked_' was present, it means the original was saved.
-        # But if for some reason the original isn't there, we can't download it.
-        # This case handles direct requests for non-watermarked files that don't exist.
         return jsonify({"success": False, "error": "Original file not found for download"}), 404
 
     return send_from_directory(photo_path, original_filename, as_attachment=True)
 
 @app.route('/download-all/<event_id>/<person_id>')
 def download_all_photos_zip(event_id, person_id):
-    # This is a simplified example. For production, consider
-    # creating a temporary zip file on the server and serving that.
-    # For now, we'll just list the original files to be downloaded one by one.
-
     event_person_dir = os.path.join(app.config['PROCESSED_FOLDER'], event_id, person_id)
     if not os.path.exists(event_person_dir):
         return jsonify({"success": False, "error": "No photos found for this person in this event"}), 404
@@ -354,7 +376,6 @@ def download_all_photos_zip(event_id, person_id):
     if os.path.exists(individual_dir):
         for f in os.listdir(individual_dir):
             if f.lower().endswith(('.png', '.jpg', '.jpeg')):
-                # Provide the full URL for the client to download
                 all_files_info.append({
                     "type": "individual",
                     "filename": f,
@@ -365,7 +386,6 @@ def download_all_photos_zip(event_id, person_id):
     group_dir = os.path.join(event_person_dir, "group")
     if os.path.exists(group_dir):
         for f in os.listdir(group_dir):
-            # Ensure we only add the original full image, not watermarked or crops
             if f.lower().endswith(('.png', '.jpg', '.jpeg')) and not f.startswith('watermarked_') and not f.startswith('crop_'):
                 all_files_info.append({
                     "type": "group",
