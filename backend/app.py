@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory, render_template
+from flask import Flask, request, jsonify, send_from_directory, render_template, session, redirect, url_for
 import os
 import base64
 import numpy as np
@@ -12,10 +12,26 @@ import threading
 import time
 import json
 import pickle
+import mysql.connector # Import MySQL connector
+from werkzeug.security import generate_password_hash, check_password_hash # For password hashing
 
 app = Flask(__name__, static_folder='../frontend/static', template_folder='../frontend/pages')
 
-# Configuration
+# --- Flask Configuration ---
+# Set a secret key for session management.
+# IMPORTANT: In a real application, use a strong, randomly generated key
+# and store it securely (e.g., in an environment variable).
+app.secret_key = 'your_super_secret_key_here_replace_me_in_production'
+
+# Database Configuration (for XAMPP MySQL)
+DB_CONFIG = {
+    'host': 'localhost',
+    'user': 'root', # Default XAMPP MySQL username
+    'password': '', # Default XAMPP MySQL password (usually empty)
+    'database': 'picme_db'
+}
+
+# --- Application Specific Configuration ---
 UPLOAD_FOLDER = 'uploads'
 PROCESSED_FOLDER = 'processed'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
@@ -35,6 +51,16 @@ os.makedirs(PROCESSED_FOLDER, exist_ok=True)
 # Dummy data for events (replace with a database in production)
 EVENTS_DATA_PATH = 'events_data.json'
 KNOWN_FACES_DATA_PATH = 'known_faces.dat'
+
+# --- Database Helper Functions ---
+def get_db_connection():
+    """Establishes a connection to the MySQL database."""
+    try:
+        conn = mysql.connector.connect(**DB_CONFIG)
+        return conn
+    except mysql.connector.Error as err:
+        print(f"Database connection error: {err}")
+        return None
 
 # Load known faces from file on startup
 def load_all_known_faces(encodings_file=KNOWN_FACES_DATA_PATH):
@@ -64,7 +90,7 @@ initial_known_encodings, initial_known_ids = load_all_known_faces()
 known_encodings.extend(initial_known_encodings)
 known_ids.extend(initial_known_ids)
 
-
+# --- Utility Functions ---
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -74,32 +100,24 @@ def add_watermark(image_path, output_path):
             width, height = img.size
             draw = ImageDraw.Draw(img)
 
-            # Use a default font (you might need to adjust this for your system)
             try:
-                # Attempt to load a common font, adjust path if necessary for your OS
-                font_path = "arial.ttf" # Or provide full path like "C:/Windows/Fonts/arial.ttf"
+                font_path = "arial.ttf"
                 font_size = int(min(width, height) / 20)
                 font = ImageFont.truetype(font_path, font_size)
             except IOError:
-                # Fallback to default PIL font if arial.ttf is not found
                 print(f"Warning: Could not load {font_path}. Using default font.")
                 font = ImageFont.load_default()
 
-            # Ensure text_width and text_height are calculated correctly for the chosen font
             try:
-                # For Pillow 9.0.0 and later
                 bbox = draw.textbbox((0, 0), WATERMARK_TEXT, font=font)
                 text_width = bbox[2] - bbox[0]
                 text_height = bbox[3] - bbox[1]
             except AttributeError:
-                # Fallback for older Pillow versions
                 text_width, text_height = draw.textsize(WATERMARK_TEXT, font)
-
 
             x = (width - text_width) / 2
             y = (height - text_height) / 2
 
-            # Add semi-transparent white text with black outline
             draw.text((x-1, y-1), WATERMARK_TEXT, font=font, fill=(0,0,0,128))
             draw.text((x+1, y-1), WATERMARK_TEXT, font=font, fill=(0,0,0,128))
             draw.text((x-1, y+1), WATERMARK_TEXT, font=font, fill=(0,0,0,128))
@@ -110,6 +128,94 @@ def add_watermark(image_path, output_path):
     except Exception as e:
         print(f"Watermark error: {e}. Copying original image instead.")
         shutil.copy(image_path, output_path)
+
+# --- Authentication Routes ---
+@app.route('/register', methods=['POST'])
+def register_user():
+    data = request.get_json()
+    full_name = data.get('fullName')
+    email = data.get('email')
+    password = data.get('password')
+
+    if not all([full_name, email, password]):
+        return jsonify({"success": False, "error": "All fields are required"}), 400
+
+    hashed_password = generate_password_hash(password)
+
+    conn = get_db_connection()
+    if conn is None:
+        return jsonify({"success": False, "error": "Database connection failed"}), 500
+
+    cursor = conn.cursor()
+    try:
+        # Check if user already exists
+        cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
+        if cursor.fetchone():
+            return jsonify({"success": False, "error": "Email already registered"}), 409
+
+        cursor.execute(
+            "INSERT INTO users (full_name, email, password) VALUES (%s, %s, %s)",
+            (full_name, email, hashed_password)
+        )
+        conn.commit()
+        return jsonify({"success": True, "message": "Registration successful!"}), 201
+    except mysql.connector.Error as err:
+        print(f"Error during registration: {err}")
+        conn.rollback()
+        return jsonify({"success": False, "error": "Registration failed"}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/login', methods=['POST'])
+def login_user():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    if not all([email, password]):
+        return jsonify({"success": False, "error": "Email and password are required"}), 400
+
+    conn = get_db_connection()
+    if conn is None:
+        return jsonify({"success": False, "error": "Database connection failed"}), 500
+
+    cursor = conn.cursor(dictionary=True) # Return rows as dictionaries
+    try:
+        cursor.execute("SELECT id, email, password FROM users WHERE email = %s", (email,))
+        user = cursor.fetchone()
+
+        if user and check_password_hash(user['password'], password):
+            session['logged_in'] = True
+            session['user_id'] = user['id']
+            session['user_email'] = user['email']
+            return jsonify({"success": True, "message": "Login successful!"}), 200
+        else:
+            return jsonify({"success": False, "error": "Invalid email or password"}), 401
+    except mysql.connector.Error as err:
+        print(f"Error during login: {err}")
+        return jsonify({"success": False, "error": "Login failed"}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/logout')
+def logout_user():
+    session.pop('logged_in', None)
+    session.pop('user_id', None)
+    session.pop('user_email', None)
+    return redirect(url_for('serve_index')) # Redirect to homepage after logout
+
+# --- Authentication Decorator (Optional but Recommended) ---
+# You can use this to protect routes that require a logged-in user
+def login_required(f):
+    @app.route.wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('logged_in'):
+            # You might want to redirect to login page or return an error
+            return redirect(url_for('serve_login_page'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 # --- Routes for serving HTML pages ---
 @app.route('/')
@@ -126,6 +232,9 @@ def serve_login_page():
 
 @app.route('/homepage')
 def serve_homepage():
+    # Example of protecting a page
+    # if not session.get('logged_in'):
+    #     return redirect(url_for('serve_login_page'))
     return render_template('homepage.html')
 
 @app.route('/event_discovery')
@@ -138,14 +247,23 @@ def serve_biometric_authentication_portal():
 
 @app.route('/personal_photo_gallery')
 def serve_personal_photo_gallery():
+    # This page should ideally be protected
+    # if not session.get('logged_in'):
+    #     return redirect(url_for('serve_login_page'))
     return render_template('personal_photo_gallery.html')
 
 @app.route('/download_center')
 def serve_download_center():
+    # This page should ideally be protected
+    # if not session.get('logged_in'):
+    #     return redirect(url_for('serve_login_page'))
     return render_template('download_center.html')
 
 @app.route('/event_organizer_hub')
 def serve_event_organizer_hub():
+    # This page should ideally be protected
+    # if not session.get('logged_in'):
+    #     return redirect(url_for('serve_login_page'))
     return render_template('event_organizer_hub.html')
 
 # Generic route for .html files (can be kept as a fallback or removed if all pages have specific routes)
@@ -160,6 +278,10 @@ def serve_html_page(page_name):
 # --- API Endpoints ---
 @app.route('/upload', methods=['POST'])
 def upload_files():
+    # This endpoint should ideally be protected for authenticated organizers
+    # if not session.get('logged_in'):
+    #     return jsonify({"success": False, "error": "Unauthorized"}), 401
+    
     if 'files' not in request.files:
         return jsonify({"success": False, "error": "No files provided"}), 400
 
@@ -169,19 +291,16 @@ def upload_files():
     if not files or len(files) == 0:
         return jsonify({"success": False, "error": "No files selected"}), 400
 
-    # Create event directory
     event_dir = os.path.join(app.config['UPLOAD_FOLDER'], event_id)
     os.makedirs(event_dir, exist_ok=True)
 
     uploaded_filenames = []
-    # Save all uploaded files
     for file in files:
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             file.save(os.path.join(event_dir, filename))
             uploaded_filenames.append(filename)
 
-    # Process images in background
     threading.Thread(target=process_images, args=(event_id,)).start()
 
     return jsonify({
@@ -196,84 +315,68 @@ def process_images(event_id):
         input_dir = os.path.join(app.config['UPLOAD_FOLDER'], event_id)
         output_dir = os.path.join(app.config['PROCESSED_FOLDER'], event_id)
 
-        # Ensure output directory for event exists
         os.makedirs(output_dir, exist_ok=True)
 
-        global known_encodings, known_ids # Declare global to modify the in-memory lists
+        global known_encodings, known_ids
 
         for filename in os.listdir(input_dir):
             if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
                 image_path = os.path.join(input_dir, filename)
 
                 try:
-                    # Load image and find faces
                     image = face_recognition.load_image_file(image_path)
                     face_locations = face_recognition.face_locations(image)
                     face_encodings_in_image = face_recognition.face_encodings(image, face_locations)
                 except Exception as e:
                     print(f"Error processing image {filename}: {e}")
-                    continue # Skip to next image
+                    continue
 
-                # Track which person_ids are found in this specific image
                 person_ids_in_current_image = set()
 
-                # For each face found in the current image
                 for i, (face_encoding, face_location) in enumerate(zip(face_encodings_in_image, face_locations)):
-                    # Check if we've seen this face before
                     matches = face_recognition.compare_faces(known_encodings, face_encoding)
 
                     person_id = None
                     if True in matches:
-                        # Existing person
                         person_id = known_ids[matches.index(True)]
                     else:
-                        # New person
                         person_id = f"person_{len(known_encodings)+1:03d}"
                         known_encodings.append(face_encoding)
                         known_ids.append(person_id)
 
                     person_ids_in_current_image.add(person_id)
 
-                    # Create person directories if they don't exist
                     person_dir = os.path.join(output_dir, person_id)
                     os.makedirs(person_dir, exist_ok=True)
                     os.makedirs(os.path.join(person_dir, "individual"), exist_ok=True)
                     os.makedirs(os.path.join(person_dir, "group"), exist_ok=True)
 
-                    # Save the face crop
                     top, right, bottom, left = face_location
                     face_image_rgb = image[top:bottom, left:right]
-                    if face_image_rgb.size == 0: # Check if the cropped image is empty
+                    if face_image_rgb.size == 0:
                          print(f"Warning: Cropped face image is empty for {filename}, face {i}")
                          continue
 
                     face_filename = f"{filename.rsplit('.', 1)[0]}_face_{i}.jpg"
 
-                    # Decide where to save based on number of faces in the original image
                     if len(face_encodings_in_image) == 1:
-                        # Single face - save as individual photo
                         output_path_face_crop = os.path.join(person_dir, "individual", face_filename)
                         cv2.imwrite(output_path_face_crop, cv2.cvtColor(face_image_rgb, cv2.COLOR_RGB2BGR))
                     else:
-                        # Multiple faces - save face crop to group for this person
-                        output_path_face_crop = os.path.join(person_dir, "group", f"crop_{face_filename}") # Prefix to distinguish
+                        output_path_face_crop = os.path.join(person_dir, "group", f"crop_{face_filename}")
                         cv2.imwrite(output_path_face_crop, cv2.cvtColor(face_image_rgb, cv2.COLOR_RGB2BGR))
 
-                # After processing all faces in an image, save the full image to each relevant person's group folder
                 if len(face_encodings_in_image) > 0:
                     for pid in person_ids_in_current_image:
                         group_dir_for_person = os.path.join(output_dir, pid, "group")
                         os.makedirs(group_dir_for_person, exist_ok=True)
 
-                        # Save the original full image to the group folder
                         original_full_image_path = os.path.join(group_dir_for_person, filename)
                         cv2.imwrite(original_full_image_path, cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
 
-                        # Create watermarked version of the full image
                         watermarked_path = os.path.join(group_dir_for_person, f"watermarked_{filename}")
                         add_watermark(original_full_image_path, watermarked_path)
 
-        # Save the updated known faces after processing
         save_all_known_faces(known_encodings, known_ids)
         print(f"Finished processing event: {event_id}. Known faces updated.")
     except Exception as e:
@@ -281,45 +384,42 @@ def process_images(event_id):
 
 @app.route('/recognize', methods=['POST'])
 def recognize_face():
+    # This endpoint might need to be protected or handle user_id from session
+    # if not session.get('logged_in'):
+    #     return jsonify({"success": False, "error": "Unauthorized"}), 401
+
     try:
-        # Get base64 image from request
         image_data = request.json.get('image')
         event_id = request.json.get('event_id', 'default_event')
 
         if not image_data:
             return jsonify({"success": False, "error": "No image provided"}), 400
 
-        # Convert to OpenCV format
         nparr = np.frombuffer(base64.b64decode(image_data), np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-        if img is None: # Check if imdecode failed
+        if img is None:
              return jsonify({"success": False, "error": "Could not decode image"}), 400
 
-        # Get face encoding
         rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         face_locations = face_recognition.face_locations(rgb_img)
 
         if not face_locations:
             return jsonify({"success": False, "error": "No face detected"}), 400
 
-        # For simplicity, we'll only process the first detected face for recognition
         face_encoding_to_recognize = face_recognition.face_encodings(rgb_img, face_locations)[0]
 
-        # Compare with stored encodings
-        global known_encodings, known_ids # Access global lists
+        global known_encodings, known_ids
         matches = face_recognition.compare_faces(known_encodings, face_encoding_to_recognize)
 
         if True in matches:
             person_id = known_ids[matches.index(True)]
-            # Filter photos by the specific event_id if provided
             event_processed_dir = os.path.join(app.config['PROCESSED_FOLDER'], event_id)
             person_event_dir = os.path.join(event_processed_dir, person_id)
 
             if not os.path.exists(person_event_dir):
                 return jsonify({"success": False, "error": f"No photos found for this person ({person_id}) in event {event_id}"}), 404
 
-            # Get list of photos
             individual_photos = []
             group_photos = []
 
@@ -348,16 +448,21 @@ def recognize_face():
 
 @app.route('/photos/<event_id>/<person_id>/<photo_type>/<filename>')
 def get_photo(event_id, person_id, photo_type, filename):
+    # This endpoint should ideally be protected
+    # if not session.get('logged_in'):
+    #     return redirect(url_for('serve_login_page')) # Or return 401
     photo_path = os.path.join(app.config['PROCESSED_FOLDER'], event_id, person_id, photo_type)
     return send_from_directory(photo_path, filename)
 
 @app.route('/download/<event_id>/<person_id>/<photo_type>/<filename>')
 def download_photo(event_id, person_id, photo_type, filename):
-    # Remove 'watermarked_' prefix if present to get the original file
+    # This endpoint should ideally be protected
+    # if not session.get('logged_in'):
+    #     return redirect(url_for('serve_login_page')) # Or return 401
+
     original_filename = filename.replace('watermarked_', '')
     photo_path = os.path.join(app.config['PROCESSED_FOLDER'], event_id, person_id, photo_type)
     
-    # Ensure the original file exists for download
     full_original_path = os.path.join(photo_path, original_filename)
     if not os.path.exists(full_original_path):
         return jsonify({"success": False, "error": "Original file not found for download"}), 404
@@ -366,12 +471,15 @@ def download_photo(event_id, person_id, photo_type, filename):
 
 @app.route('/download-all/<event_id>/<person_id>')
 def download_all_photos_zip(event_id, person_id):
+    # This endpoint should ideally be protected
+    # if not session.get('logged_in'):
+    #     return redirect(url_for('serve_login_page')) # Or return 401
+
     event_person_dir = os.path.join(app.config['PROCESSED_FOLDER'], event_id, person_id)
     if not os.path.exists(event_person_dir):
         return jsonify({"success": False, "error": "No photos found for this person in this event"}), 404
 
     all_files_info = []
-    # Collect all individual photos (original, not cropped for group)
     individual_dir = os.path.join(event_person_dir, "individual")
     if os.path.exists(individual_dir):
         for f in os.listdir(individual_dir):
@@ -382,7 +490,6 @@ def download_all_photos_zip(event_id, person_id):
                     "url": f"/download/{event_id}/{person_id}/individual/{f}"
                 })
 
-    # Collect all original full group photos (non-watermarked)
     group_dir = os.path.join(event_person_dir, "group")
     if os.path.exists(group_dir):
         for f in os.listdir(group_dir):
@@ -403,10 +510,8 @@ def download_all_photos_zip(event_id, person_id):
     })
 
 
-# API endpoint to get event data for event_discovery.html
 @app.route('/events', methods=['GET'])
 def get_events():
-    # Load dummy events data from a JSON file
     if os.path.exists(EVENTS_DATA_PATH):
         try:
             with open(EVENTS_DATA_PATH, 'r') as f:
@@ -415,7 +520,7 @@ def get_events():
         except Exception as e:
             print(f"Error loading events data from {EVENTS_DATA_PATH}: {e}")
             return jsonify({"error": "Failed to load events data"}), 500
-    return jsonify([]) # Return empty list if no data file
+    return jsonify([])
 
 
 def cleanup_old_events():
@@ -424,7 +529,6 @@ def cleanup_old_events():
             threshold = datetime.now() - timedelta(days=30)
             for event in os.listdir(app.config['UPLOAD_FOLDER']):
                 event_path = os.path.join(app.config['UPLOAD_FOLDER'], event)
-                # Check if it's a directory and get its modification time
                 if os.path.isdir(event_path):
                     event_time = datetime.fromtimestamp(os.path.getmtime(event_path))
                     if event_time < threshold:
@@ -433,7 +537,6 @@ def cleanup_old_events():
 
             for event in os.listdir(app.config['PROCESSED_FOLDER']):
                 event_path = os.path.join(app.config['PROCESSED_FOLDER'], event)
-                # Check if it's a directory and get its modification time
                 if os.path.isdir(event_path):
                     event_time = datetime.fromtimestamp(os.path.getmtime(event_path))
                     if event_time < threshold:
@@ -442,14 +545,12 @@ def cleanup_old_events():
         except Exception as e:
             print(f"Cleanup error: {e}")
 
-        time.sleep(24 * 60 * 60)  # Run once per day
+        time.sleep(24 * 60 * 60)
 
 
 if __name__ == '__main__':
-    # Start cleanup thread
     threading.Thread(target=cleanup_old_events, daemon=True).start()
 
-    # Create a dummy events_data.json if it doesn't exist
     if not os.path.exists(EVENTS_DATA_PATH):
         dummy_events = [
             {
@@ -458,7 +559,7 @@ if __name__ == '__main__':
                 "location": "San Francisco, CA",
                 "date": "July 15-17, 2025",
                 "category": "Festival",
-                "image": "/static/images/event1.jpg", # Placeholder path, update if needed
+                "image": "/static/images/event1.jpg",
                 "photos_count": 1428,
                 "sample_photos": [
                     "/static/images/sample1.jpg",
@@ -499,10 +600,6 @@ if __name__ == '__main__':
             json.dump(dummy_events, f, indent=4)
         print(f"Created dummy events data at {EVENTS_DATA_PATH}")
 
-    # Ensure static images directory exists for the dummy data
     os.makedirs('frontend/static/images', exist_ok=True)
-    # Note: You still need to manually place actual image files here if you want them to display.
-    # E.g., picme1/frontend/static/images/event1.jpg, picme1/frontend/static/images/sample1.jpg etc.
 
-
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True) # Set debug=True for development

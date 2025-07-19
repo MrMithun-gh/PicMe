@@ -4,3 +4,5 @@ numpy==1.21.2
 opencv-python==4.5.3.56
 pillow==8.3.1
 python-dotenv==0.19.0
+mysql-connector-python==8.0.27  # Add this line
+Werkzeug==2.0.1                 # Ensure Werkzeug is explicitly listed for hashing

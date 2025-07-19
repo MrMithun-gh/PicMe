@@ -11,7 +11,59 @@
 <body class="bg-gray-50">
     <!-- Navigation (same as homepage with active state for Organizers) -->
     <nav class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm">
-        <!-- Copy navigation from homepage.html -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="/homepage" class="flex items-center space-x-2">
+                        <svg class="w-8 h-8 text-indigo-600" viewBox="0 0 32 32" fill="currentColor">
+                            <path d="M16 2L20 10H28L22 16L24 24L16 20L8 24L10 16L4 10H12L16 2Z"/>
+                            <circle cx="16" cy="16" r="6" fill="none" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        <span class="text-xl font-bold text-indigo-600">PicMe</span>
+                    </a>
+                </div>
+                
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="/homepage" class="text-gray-600 hover:text-indigo-600 transition-colors duration-200">Home</a>
+                    <a href="/event_discovery" class="text-gray-600 hover:text-indigo-600 transition-colors duration-200">Events</a>
+                    <a href="/biometric_authentication_portal" class="text-gray-600 hover:text-indigo-600 transition-colors duration-200">Scan Face</a>
+                    <a href="/personal_photo_gallery" class="text-gray-600 hover:text-indigo-600 transition-colors duration-200">My Photos</a>
+                    <a href="/download_center" class="text-gray-600 hover:text-indigo-600 transition-colors duration-200">Downloads</a>
+                    <a href="/event_organizer_hub" class="text-indigo-600 hover:text-indigo-600 transition-colors duration-200">For Organizers</a>
+                </div>
+                
+                <!-- User Profile/Login -->
+                <div class="flex items-center space-x-4">
+                    <a href="/login" class="px-4 py-2 rounded-md text-sm font-medium text-indigo-600 border border-indigo-600 hover:bg-indigo-50 transition-colors duration-200">Login</a>
+                    <a href="/signup" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors duration-200">Sign Up</a>
+                </div>
+                
+                <!-- Mobile Menu Button -->
+                <button class="md:hidden p-2 rounded-md text-gray-700 hover:text-indigo-600 hover:bg-gray-100 focus:outline-none">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu (Copied from homepage.html) -->
+        <div class="md:hidden hidden bg-white shadow-lg" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="/homepage" class="block px-3 py-2 rounded-md text-base font-medium text-gray-900 hover:text-indigo-600 hover:bg-gray-50">Home</a>
+                <a href="/event_discovery" class="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-50">Events</a>
+                <a href="/biometric_authentication_portal" class="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-50">Scan Face</a>
+                <a href="/personal_photo_gallery" class="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-50">My Photos</a>
+                <a href="/download_center" class="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-50">Downloads</a>
+                <a href="/event_organizer_hub" class="block px-3 py-2 rounded-md text-base font-medium text-indigo-600 hover:text-indigo-600 hover:bg-gray-50">For Organizers</a>
+                <div class="pt-4 pb-2 border-t border-gray-200">
+                    <a href="/login" class="block px-3 py-2 rounded-md text-base font-medium text-indigo-600 hover:bg-indigo-50">Login</a>
+                    <a href="/signup" class="block px-3 py-2 rounded-md text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700">Sign Up</a>
+                </div>
+            </div>
+        </div>
     </nav>
 
     <main class="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
@@ -200,7 +252,64 @@
 
     <!-- Footer (same as homepage) -->
     <footer class="bg-gray-900 text-white py-12 px-4 sm:px-6 lg:px-8">
-        <!-- Copy footer from homepage.html -->
+        <div class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div>
+                <h3 class="text-lg font-semibold mb-4">PicMe</h3>
+                <ul class="space-y-2">
+                    <li><a href="about.html" class="text-gray-400 hover:text-white">About Us</a></li>
+                    <li><a href="careers.html" class="text-gray-400 hover:text-white">Careers</a></li>
+                    <li><a href="press.html" class="text-gray-400 hover:text-white">Press</a></li>
+                </ul>
+            </div>
+            
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Features</h3>
+                <ul class="space-y-2">
+                    <li><a href="/biometric_authentication_portal" class="text-gray-400 hover:text-white">Face Recognition</a></li>
+                    <li><a href="/event_discovery" class="text-gray-400 hover:text-white">Event Discovery</a></li>
+                    <li><a href="/download_center" class="text-gray-400 hover:text-white">Photo Downloads</a></li>
+                </ul>
+            </div>
+            
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Resources</h3>
+                <ul class="space-y-2">
+                    <li><a href="help.html" class="text-gray-400 hover:text-white">Help Center</a></li>
+                    <li><a href="privacy.html" class="text-gray-400 hover:text-white">Privacy Policy</a></li>
+                    <li><a href="terms.html" class="text-gray-400 hover:text-white">Terms of Service</a></li>
+                </ul>
+            </div>
+            
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Connect</h3>
+                <div class="flex space-x-4 mb-4">
+                    <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+                <p class="text-gray-400 text-sm">
+                    Subscribe to our newsletter for updates
+                </p>
+                <form class="mt-2 flex">
+                    <input type="email" placeholder="Your email" class="px-3 py-2 bg-gray-800 text-white rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full">
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-r-md">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="max-w-7xl mx-auto border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <p class="text-gray-400 text-sm mb-4 md:mb-0">
+                © 2025 PicMe, Inc. All rights reserved.
+            </p>
+            <div class="flex space-x-6">
+                <a href="privacy.html" class="text-gray-400 hover:text-white text-sm">Privacy</a>
+                <a href="terms.html" class="text-gray-400 hover:text-white text-sm">Terms</a>
+                <a href="cookies.html" class="text-gray-400 hover:text-white text-sm">Cookies</a>
+            </div>
+        </div>
     </footer>
 </body>
 </html>
