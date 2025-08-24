@@ -3,103 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Face Recognition - PicMe</title>
-    <link rel="stylesheet" href="../css/main.css">
-    <script src="../js/camera.js" defer></script>
+    <title>Scan Face for Event - PicMe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-background">
-    <!-- Navigation Header (same as your original) -->
-    <nav class="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-md border-b border-gray-200">
-        <!-- ... your existing nav code ... -->
+<body class="bg-gray-50">
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm">
     </nav>
 
-    <main class="pt-16 min-h-screen">
-        <!-- Hero Section with Privacy Messaging -->
-        <section class="py-12 bg-gradient-to-br from-primary to-secondary text-white">
-            <!-- ... your existing hero section ... -->
-        </section>
+    <main class="pt-24 pb-12">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 id="event-title" class="text-3xl md:text-4xl font-bold text-gray-900">Scan Your Face</h1>
+            <p class="text-lg text-gray-600 mt-2">Your camera will start automatically.</p>
+        </div>
 
-        <!-- Authentication Interface -->
-        <section class="py-16 bg-background">
-            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                    <!-- Camera Interface -->
-                    <div class="order-2 lg:order-1">
-                        <div class="bg-surface rounded-2xl p-8 shadow-subtle">
-                            <div class="text-center mb-8">
-                                <h2 class="text-2xl font-bold text-text-primary mb-2">Position your face in the circle</h2>
-                                <p class="text-text-secondary">Look directly at the camera for the best results</p>
-                            </div>
-                            
-                            <!-- Camera Preview -->
-                            <div class="relative mb-8">
-                                <div class="aspect-square max-w-sm mx-auto relative">
-                                    <div id="camera-preview" class="w-full h-full bg-gray-900 rounded-2xl overflow-hidden relative">
-                                        <video id="video" width="100%" height="100%" autoplay playsinline class="object-cover"></video>
-                                        <canvas id="canvas" class="hidden"></canvas>
-                                        
-                                        <!-- Scanning Overlay -->
-                                        <div class="absolute inset-0 flex items-center justify-center">
-                                            <div class="biometric-scanner w-64 h-64 border-accent animate-pulse-biometric">
-                                                <div class="absolute inset-0 rounded-full border-2 border-dashed border-accent/50 animate-spin" style="animation-duration: 3s;"></div>
-                                                <div class="absolute inset-4 rounded-full border border-accent/30"></div>
-                                                <div class="absolute inset-8 rounded-full border border-accent/20"></div>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Scanning Line -->
-                                        <div id="scan-line" class="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-accent to-transparent opacity-0 transition-all duration-1000"></div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Real-time Feedback -->
-                                <div id="feedback-message" class="text-center mt-4">
-                                    <div class="inline-flex items-center space-x-2 px-4 py-2 bg-accent/10 rounded-full">
-                                        <div class="w-2 h-2 bg-accent rounded-full animate-pulse"></div>
-                                        <span class="text-accent font-medium">Ready to scan</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Control Buttons -->
-                            <div class="flex flex-col sm:flex-row gap-4">
-                                <button id="start-scan-btn" class="btn-primary flex-1 flex items-center justify-center space-x-2">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                    </svg>
-                                    <span>Start Face Scan</span>
-                                </button>
-                                <button id="privacy-btn" class="btn-secondary flex-1 flex items-center justify-center space-x-2">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                    <span>Privacy Details</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Instructions & Tips -->
-                    <div class="order-1 lg:order-2">
-                        <!-- ... your existing instructions section ... -->
-                    </div>
-                </div>
+        <div class="max-w-md mx-auto mt-10 bg-white p-8 rounded-2xl shadow-lg">
+            <div id="media-container" class="relative w-full aspect-square rounded-full overflow-hidden border-4 border-indigo-200 mb-6 mx-auto">
+                <video id="video" autoplay playsinline class="w-full h-full object-cover scale-x-[-1]"></video>
+                <canvas id="canvas" class="hidden w-full h-full object-cover scale-x-[-1]"></canvas>
             </div>
-        </section>
+            
+            <div id="feedback-message" class="text-center h-8 mb-4 text-indigo-600 font-medium text-lg">
+                Please wait, initializing camera...
+            </div>
 
-        <!-- ... rest of your existing sections ... -->
+            <button id="recapture-btn" class="hidden w-full flex items-center justify-center gap-3 px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold text-lg hover:bg-indigo-700 transition-colors">
+                <i class="fas fa-redo"></i>
+                Try Again
+            </button>
+        </div>
     </main>
 
-    <!-- ... your existing modals ... -->
-
     <script>
-        // Get event ID from URL if present
-        const urlParams = new URLSearchParams(window.location.search);
-        const eventId = urlParams.get('event_id') || 'default_event';
-        
-        // Pass event ID to camera.js
-        window.PICME_EVENT_ID = eventId;
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const feedbackMessage = document.getElementById('feedback-message');
+            const recaptureBtn = document.getElementById('recapture-btn');
+            let eventId = 'default_event';
+
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const idFromUrl = urlParams.get('event_id');
+                if (idFromUrl) {
+                    eventId = idFromUrl;
+                }
+            } catch (e) {
+                console.error("Could not read Event ID from URL.", e);
+            }
+            
+            function updateFeedback(message, type = 'info') {
+                const typeClasses = {
+                    info: 'text-indigo-600',
+                    success: 'text-green-600',
+                    error: 'text-red-600'
+                };
+                feedbackMessage.className = `text-center h-8 mb-4 font-medium text-lg ${typeClasses[type]}`;
+                feedbackMessage.textContent = message;
+            }
+
+            async function startCamera() {
+                recaptureBtn.classList.add('hidden');
+                video.classList.remove('hidden');
+                canvas.classList.add('hidden');
+                updateFeedback("Initializing camera...", "info");
+
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 720 } },
+                        audio: false
+                    });
+
+                    video.srcObject = stream;
+                    video.play();
+                    
+                    updateFeedback("Center your face. Ensure good lighting & hold still...", "info");
+
+                    setTimeout(() => {
+                        captureAndRecognizeFace(stream);
+                    }, 3500);
+
+                } catch (err) {
+                    console.error("Camera Access Error:", err);
+                    if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+                        updateFeedback("Camera permission denied. Please allow camera access and refresh.", "error");
+                    } else {
+                        updateFeedback("Camera not found. Ensure it's connected and enabled.", "error");
+                    }
+                }
+            }
+
+            function captureAndRecognizeFace(stream) {
+                updateFeedback("Analyzing...", "info");
+                const context = canvas.getContext('2d');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.translate(canvas.width, 0);
+                context.scale(-1, 1);
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const imageData = canvas.toDataURL('image/jpeg');
+                stream.getTracks().forEach(track => track.stop());
+                recognizeFaceAPI(imageData);
+            }
+
+            async function recognizeFaceAPI(imageData) {
+                updateFeedback("Verifying...", "info");
+                try {
+                    const response = await fetch('/recognize', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image: imageData.split(',')[1], event_id: eventId })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        updateFeedback("Match Found! This is you.", "success");
+                        video.classList.add('hidden');
+                        canvas.classList.remove('hidden');
+                        
+                        sessionStorage.setItem('picme_gallery_data', JSON.stringify(data));
+                        
+                        setTimeout(() => {
+                            window.location.href = '/personal_photo_gallery';
+                        }, 2500);
+
+                    } else {
+                        updateFeedback(data.error || "No match found.", "error");
+                        recaptureBtn.classList.remove('hidden');
+                    }
+                } catch (error) {
+                    console.error("Recognition API Error:", error);
+                    updateFeedback("Service unavailable. Please try again later.", "error");
+                    recaptureBtn.classList.remove('hidden');
+                }
+            }
+
+            recaptureBtn.addEventListener('click', () => {
+                startCamera(); 
+            });
+
+            startCamera();
+        });
     </script>
 </body>
 </html>

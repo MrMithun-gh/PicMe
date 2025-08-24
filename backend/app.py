@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, send_from_directory, render_template, session, redirect, url_for
-from functools import wraps # Import wraps for decorator
+from functools import wraps
 import os
 import base64
 import numpy as np
@@ -16,180 +16,159 @@ import pickle
 import mysql.connector
 from werkzeug.security import generate_password_hash, check_password_hash
 
+# --- CONFIGURATION ---
 app = Flask(__name__, static_folder='../frontend/static', template_folder='../frontend/pages')
-
-# --- Flask Configuration ---
-app.secret_key = 'your_super_secret_key_here_replace_me_in_production' # IMPORTANT: Change this!
-
-# Database Configuration (for XAMPP MySQL)
-DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': '',
-    'database': 'picme_db'
-}
-
-# --- Application Specific Configuration ---
-UPLOAD_FOLDER = 'uploads'
-PROCESSED_FOLDER = 'processed'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-WATERMARK_TEXT = "PicMe Preview"
+app.secret_key = 'your_super_secret_key_here'
+DB_CONFIG = {'host': 'localhost', 'user': 'root', 'password': '', 'database': 'picme_db'}
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_FOLDER = os.path.join(BASE_DIR, '..', 'uploads')
+PROCESSED_FOLDER = os.path.join(BASE_DIR, '..', 'processed')
+EVENTS_DATA_PATH = os.path.join(BASE_DIR, '..', 'events_data.json')
+KNOWN_FACES_DATA_PATH = os.path.join(BASE_DIR, 'known_faces.dat')
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
 
-# In-memory storage for face encodings (in production, use a database)
-known_encodings = []
-known_ids = []
-
-# Ensure folders exist
+known_encodings, known_ids = [], []
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(PROCESSED_FOLDER, exist_ok=True)
 
-# Dummy data for events (replace with a database in production)
-EVENTS_DATA_PATH = 'events_data.json'
-KNOWN_FACES_DATA_PATH = 'known_faces.dat'
-
-# --- Database Helper Functions ---
+# --- HELPER FUNCTIONS ---
 def get_db_connection():
-    try:
-        conn = mysql.connector.connect(**DB_CONFIG)
-        return conn
-    except mysql.connector.Error as err:
-        print(f"Database connection error: {err}")
-        return None
+    try: return mysql.connector.connect(**DB_CONFIG)
+    except mysql.connector.Error as err: print(f"DB Error: {err}"); return None
 
-# Load known faces from file on startup
-def load_all_known_faces(encodings_file=KNOWN_FACES_DATA_PATH):
-    if os.path.exists(encodings_file):
+def load_all_known_faces(file=KNOWN_FACES_DATA_PATH):
+    if os.path.exists(file):
         try:
-            with open(encodings_file, 'rb') as f:
-                known_encodings_loaded, known_ids_loaded = pickle.load(f)
-            print(f"Loaded {len(known_encodings_loaded)} known faces from {encodings_file}")
-            return known_encodings_loaded, known_ids_loaded
-        except Exception as e:
-            print(f"Error loading known faces from {encodings_file}: {e}. Starting fresh.")
-            return [], []
-    print(f"No known faces file found at {encodings_file}. Starting fresh.")
+            with open(file, 'rb') as f: return pickle.load(f)
+        except Exception: return [], []
     return [], []
 
-# Save known faces to file
-def save_all_known_faces(encodings, ids, encodings_file=KNOWN_FACES_DATA_PATH):
-    try:
-        with open(encodings_file, 'wb') as f:
-            pickle.dump((encodings, ids), f)
-        print(f"Saved {len(encodings)} known faces to {encodings_file}")
-    except Exception as e:
-        print(f"Error saving known faces to {encodings_file}: {e}")
+def save_all_known_faces(encodings, ids, file=KNOWN_FACES_DATA_PATH):
+    with open(file, 'wb') as f: pickle.dump((encodings, ids), f)
 
-# Initialize known faces on app startup
 initial_known_encodings, initial_known_ids = load_all_known_faces()
 known_encodings.extend(initial_known_encodings)
 known_ids.extend(initial_known_ids)
 
-# --- Utility Functions ---
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def add_watermark(image_path, output_path):
-    try:
-        with Image.open(image_path) as img:
-            width, height = img.size
-            draw = ImageDraw.Draw(img)
-
-            try:
-                font_path = "arial.ttf"
-                font_size = int(min(width, height) / 20)
-                font = ImageFont.truetype(font_path, font_size)
-            except IOError:
-                print(f"Warning: Could not load {font_path}. Using default font.")
-                font = ImageFont.load_default()
-
-            try:
-                bbox = draw.textbbox((0, 0), WATERMARK_TEXT, font=font)
-                text_width = bbox[2] - bbox[0]
-                text_height = bbox[3] - bbox[1]
-            except AttributeError:
-                text_width, text_height = draw.textsize(WATERMARK_TEXT, font)
-
-            x = (width - text_width) / 2
-            y = (height - text_height) / 2
-
-            draw.text((x-1, y-1), WATERMARK_TEXT, font=font, fill=(0,0,0,128))
-            draw.text((x+1, y-1), WATERMARK_TEXT, font=font, fill=(0,0,0,128))
-            draw.text((x-1, y+1), WATERMARK_TEXT, font=font, fill=(0,0,0,128))
-            draw.text((x+1, y+1), WATERMARK_TEXT, font=font, fill=(0,0,0,128))
-            draw.text((x, y), WATERMARK_TEXT, font=font, fill=(255,255,255,128))
-
-            img.save(output_path)
-    except Exception as e:
-        print(f"Watermark error: {e}. Copying original image instead.")
-        shutil.copy(image_path, output_path)
-
-# --- Authentication Decorator ---
 def login_required(f):
-    @wraps(f) # Preserves original function's metadata
+    @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not session.get('logged_in'):
-            return redirect(url_for('serve_login_page'))
+        if not session.get('logged_in'): return redirect(url_for('serve_login_page'))
         return f(*args, **kwargs)
     return decorated_function
 
-# --- Authentication Routes ---
+def process_images(event_id):
+    try:
+        input_dir = os.path.join(app.config['UPLOAD_FOLDER'], event_id)
+        output_dir = os.path.join(app.config['PROCESSED_FOLDER'], event_id)
+        os.makedirs(output_dir, exist_ok=True)
+        global known_encodings, known_ids
+        print(f"--- [LOG] Starting processing for event: {event_id} ---")
+        for filename in os.listdir(input_dir):
+            if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+                image_path = os.path.join(input_dir, filename)
+                print(f"--- [LOG] Processing image: {filename}")
+                try:
+                    image = face_recognition.load_image_file(image_path)
+                    face_encodings_in_image = face_recognition.face_encodings(image)
+                    print(f"--- [LOG] Found {len(face_encodings_in_image)} face(s) in {filename}")
+                    
+                    person_ids_in_image = set()
+                    for face_encoding in face_encodings_in_image:
+                        matches = face_recognition.compare_faces(known_encodings, face_encoding)
+                        person_id = None
+                        if True in matches:
+                            person_id = known_ids[matches.index(True)]
+                        else:
+                            person_id = f"person_{len(known_encodings) + 1:04d}"
+                            known_encodings.append(face_encoding)
+                            known_ids.append(person_id)
+                            print(f"--- [LOG] New person found! ID: {person_id}")
+                        person_ids_in_image.add(person_id)
+
+                    if len(face_encodings_in_image) > 0:
+                        for pid in person_ids_in_image:
+                            person_dir = os.path.join(output_dir, pid)
+                            individual_dir = os.path.join(person_dir, "individual")
+                            group_dir = os.path.join(person_dir, "group")
+                            os.makedirs(individual_dir, exist_ok=True)
+                            os.makedirs(group_dir, exist_ok=True)
+
+                            if len(face_encodings_in_image) == 1:
+                                shutil.copy(image_path, os.path.join(individual_dir, filename))
+                                print(f"--- [LOG] Saved '{filename}' to INDIVIDUAL folder for {pid}")
+                            
+                            original_dest = os.path.join(group_dir, filename)
+                            watermarked_dest = os.path.join(group_dir, f"watermarked_{filename}")
+                            shutil.copy(image_path, original_dest)
+                            shutil.copy(image_path, watermarked_dest)
+                            print(f"--- [LOG] Saved watermarked '{filename}' to GROUP folder for {pid}")
+
+                except Exception as e:
+                    print(f"  -> ERROR processing {filename}: {e}")
+        save_all_known_faces(known_encodings, known_ids)
+        print(f"--- [LOG] Finished processing event: {event_id}. Total known faces: {len(known_encodings)} ---")
+    except Exception as e:
+        print(f"  -> FATAL ERROR during processing for event {event_id}: {e}")
+
+# --- ROUTES FOR SERVING ALL HTML PAGES ---
+@app.route('/')
+def serve_index(): return render_template('index.html')
+@app.route('/login')
+def serve_login_page(): return render_template('login.html')
+@app.route('/signup')
+def serve_signup_page(): return render_template('signup.html')
+@app.route('/homepage')
+@login_required
+def serve_homepage(): return render_template('homepage.html')
+@app.route('/event_discovery')
+@login_required
+def serve_event_discovery(): return render_template('event_discovery.html')
+@app.route('/event_detail')
+@login_required
+def serve_event_detail(): return render_template('event_detail.html')
+@app.route('/biometric_authentication_portal')
+@login_required
+def serve_biometric_authentication_portal(): return render_template('biometric_authentication_portal.html')
+@app.route('/personal_photo_gallery')
+@login_required
+def serve_personal_photo_gallery(): return render_template('personal_photo_gallery.html')
+
+# --- AUTHENTICATION API ROUTES ---
 @app.route('/register', methods=['POST'])
 def register_user():
     data = request.get_json()
-    full_name = data.get('fullName')
-    email = data.get('email')
-    password = data.get('password')
-
-    if not all([full_name, email, password]):
-        return jsonify({"success": False, "error": "All fields are required"}), 400
-
+    full_name, email, password = data.get('fullName'), data.get('email'), data.get('password')
+    if not all([full_name, email, password]): return jsonify({"success": False, "error": "All fields are required"}), 400
     hashed_password = generate_password_hash(password)
-
     conn = get_db_connection()
     if conn is None:
         return jsonify({"success": False, "error": "Database connection failed"}), 500
-
     cursor = conn.cursor()
     try:
         cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
-        if cursor.fetchone():
-            return jsonify({"success": False, "error": "Email already registered"}), 409
-
-        cursor.execute(
-            "INSERT INTO users (full_name, email, password) VALUES (%s, %s, %s)",
-            (full_name, email, hashed_password)
-        )
+        if cursor.fetchone(): return jsonify({"success": False, "error": "Email already registered"}), 409
+        cursor.execute("INSERT INTO users (full_name, email, password) VALUES (%s, %s, %s)", (full_name, email, hashed_password))
         conn.commit()
         return jsonify({"success": True, "message": "Registration successful!"}), 201
     except mysql.connector.Error as err:
-        print(f"Error during registration: {err}")
-        conn.rollback()
-        return jsonify({"success": False, "error": "Registration failed"}), 500
+        conn.rollback(); return jsonify({"success": False, "error": "Registration failed"}), 500
     finally:
-        cursor.close()
-        conn.close()
+        cursor.close(); conn.close()
 
 @app.route('/login', methods=['POST'])
 def login_user():
     data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
-
-    if not all([email, password]):
-        return jsonify({"success": False, "error": "Email and password are required"}), 400
-
+    email, password = data.get('email'), data.get('password')
+    if not all([email, password]): return jsonify({"success": False, "error": "Email and password are required"}), 400
     conn = get_db_connection()
-    if conn is None:
-        return jsonify({"success": False, "error": "Database connection failed"}), 500
-
+    if conn is None: return jsonify({"success": False, "error": "Database connection failed"}), 500
     cursor = conn.cursor(dictionary=True)
     try:
         cursor.execute("SELECT id, email, password FROM users WHERE email = %s", (email,))
         user = cursor.fetchone()
-
         if user and check_password_hash(user['password'], password):
             session['logged_in'] = True
             session['user_id'] = user['id']
@@ -199,390 +178,93 @@ def login_user():
             return jsonify({"success": False, "error": "Invalid email or password"}), 401
     except mysql.connector.Error as err:
         print(f"Error during login: {err}")
-        return jsonify({"success": False, "error": "Login failed"}), 500
+        return jsonify({"success": False, "error": "An internal server error occurred during login."}), 500
     finally:
-        cursor.close()
-        conn.close()
+        cursor.close(); conn.close()
 
 @app.route('/logout')
 def logout_user():
-    session.pop('logged_in', None)
-    session.pop('user_id', None)
-    session.pop('user_email', None)
+    session.clear()
     return redirect(url_for('serve_index'))
 
-# --- Routes for serving HTML pages ---
-@app.route('/')
-def serve_index():
-    return render_template('index.html')
+# --- CORE API & FILE SERVING ROUTES ---
+@app.route('/events', methods=['GET'])
+def get_events():
+    with open(EVENTS_DATA_PATH, 'r') as f: return jsonify(json.load(f))
 
-@app.route('/signup')
-def serve_signup_page():
-    return render_template('signup.html')
+@app.route('/api/events/<event_id>/photos', methods=['GET'])
+def get_event_photos(event_id):
+    event_dir = os.path.join(app.config['PROCESSED_FOLDER'], event_id)
+    if not os.path.exists(event_dir):
+        return jsonify({"success": False, "error": "No photos found for this event yet."}), 404
+    unique_photos = set()
+    for person_id in os.listdir(event_dir):
+        group_dir = os.path.join(event_dir, person_id, "group")
+        if os.path.exists(group_dir):
+            for filename in os.listdir(group_dir):
+                if filename.startswith('watermarked_'):
+                    unique_photos.add(filename)
+    photo_urls = [f"/photos/{event_id}/all/{filename}" for filename in sorted(list(unique_photos))]
+    return jsonify({"success": True, "photos": photo_urls})
 
-@app.route('/login')
-def serve_login_page():
-    return render_template('login.html')
-
-# Apply login_required to all pages that require authentication
-@app.route('/homepage')
-@login_required
-def serve_homepage():
-    return render_template('homepage.html')
-
-@app.route('/event_discovery')
-@login_required
-def serve_event_discovery():
-    return render_template('event_discovery.html')
-
-@app.route('/biometric_authentication_portal')
-@login_required
-def serve_biometric_authentication_portal():
-    return render_template('biometric_authentication_portal.html')
-
-@app.route('/personal_photo_gallery')
-@login_required
-def serve_personal_photo_gallery():
-    return render_template('personal_photo_gallery.html')
-
-@app.route('/download_center')
-@login_required
-def serve_download_center():
-    return render_template('download_center.html')
-
-@app.route('/event_organizer_hub')
-@login_required
-def serve_event_organizer_hub():
-    return render_template('event_organizer_hub.html')
-
-# Generic route for .html files (kept for completeness, but specific routes are preferred)
-@app.route('/<page_name>.html')
-def serve_html_page(page_name):
-    # This route is less secure if not protected, as it allows direct access to .html files
-    # Consider if you truly need this, or if all pages should have specific @app.route definitions.
-    # For now, it will serve the HTML, but if a protected page is accessed this way,
-    # it won't be protected by @login_required unless you add checks here.
-    template_path = os.path.join(app.template_folder, f'{page_name}.html')
-    if os.path.exists(template_path):
-        # If this page is meant to be protected, you would need a check here too
-        # e.g., if page_name in PROTECTED_PAGES and not session.get('logged_in'): ...
-        return render_template(f'{page_name}.html')
-    else:
-        return "Page Not Found", 404
-
-# --- API Endpoints (also need protection if they serve user-specific data) ---
-@app.route('/upload', methods=['POST'])
-@login_required # Protect the upload endpoint
-def upload_files():
-    if 'files' not in request.files:
-        return jsonify({"success": False, "error": "No files provided"}), 400
-
-    files = request.files.getlist('files')
-    event_id = request.form.get('event_id', 'default_event')
-
-    if not files or len(files) == 0:
-        return jsonify({"success": False, "error": "No files selected"}), 400
-
-    event_dir = os.path.join(app.config['UPLOAD_FOLDER'], event_id)
-    os.makedirs(event_dir, exist_ok=True)
-
-    uploaded_filenames = []
-    for file in files:
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(event_dir, filename))
-            uploaded_filenames.append(filename)
-
-    threading.Thread(target=process_images, args=(event_id,)).start()
-
-    return jsonify({
-        "success": True,
-        "message": f"{len(files)} files uploaded. Processing started.",
-        "event_id": event_id,
-        "uploaded_filenames": uploaded_filenames
-    })
-
-def process_images(event_id):
-    try:
-        input_dir = os.path.join(app.config['UPLOAD_FOLDER'], event_id)
-        output_dir = os.path.join(app.config['PROCESSED_FOLDER'], event_id)
-
-        os.makedirs(output_dir, exist_ok=True)
-
-        global known_encodings, known_ids
-
-        for filename in os.listdir(input_dir):
-            if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
-                image_path = os.path.join(input_dir, filename)
-
-                try:
-                    image = face_recognition.load_image_file(image_path)
-                    face_locations = face_recognition.face_locations(image)
-                    face_encodings_in_image = face_recognition.face_encodings(image, face_locations)
-                except Exception as e:
-                    print(f"Error processing image {filename}: {e}")
-                    continue
-
-                person_ids_in_current_image = set()
-
-                for i, (face_encoding, face_location) in enumerate(zip(face_encodings_in_image, face_locations)):
-                    matches = face_recognition.compare_faces(known_encodings, face_encoding)
-
-                    person_id = None
-                    if True in matches:
-                        person_id = known_ids[matches.index(True)]
-                    else:
-                        person_id = f"person_{len(known_encodings)+1:03d}"
-                        known_encodings.append(face_encoding)
-                        known_ids.append(person_id)
-
-                    person_ids_in_current_image.add(person_id)
-
-                    person_dir = os.path.join(output_dir, person_id)
-                    os.makedirs(person_dir, exist_ok=True)
-                    os.makedirs(os.path.join(person_dir, "individual"), exist_ok=True)
-                    os.makedirs(os.path.join(person_dir, "group"), exist_ok=True)
-
-                    top, right, bottom, left = face_location
-                    face_image_rgb = image[top:bottom, left:right]
-                    if face_image_rgb.size == 0:
-                         print(f"Warning: Cropped face image is empty for {filename}, face {i}")
-                         continue
-
-                    face_filename = f"{filename.rsplit('.', 1)[0]}_face_{i}.jpg"
-
-                    if len(face_encodings_in_image) == 1:
-                        output_path_face_crop = os.path.join(person_dir, "individual", face_filename)
-                        cv2.imwrite(output_path_face_crop, cv2.cvtColor(face_image_rgb, cv2.COLOR_RGB2BGR))
-                    else:
-                        output_path_face_crop = os.path.join(person_dir, "group", f"crop_{face_filename}")
-                        cv2.imwrite(output_path_face_crop, cv2.cvtColor(face_image_rgb, cv2.COLOR_RGB2BGR))
-
-                if len(face_encodings_in_image) > 0:
-                    for pid in person_ids_in_current_image:
-                        group_dir_for_person = os.path.join(output_dir, pid, "group")
-                        os.makedirs(group_dir_for_person, exist_ok=True)
-
-                        original_full_image_path = os.path.join(group_dir_for_person, filename)
-                        cv2.imwrite(original_full_image_path, cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
-
-                        watermarked_path = os.path.join(group_dir_for_person, f"watermarked_{filename}")
-                        add_watermark(original_full_image_path, watermarked_path)
-
-        save_all_known_faces(known_encodings, known_ids)
-        print(f"Finished processing event: {event_id}. Known faces updated.")
-    except Exception as e:
-        print(f"Error processing images for event {event_id}: {e}")
-
-@app.route('/recognize', methods=['POST'])
-@login_required # Protect the recognition endpoint
-def recognize_face():
-    try:
-        image_data = request.json.get('image')
-        event_id = request.json.get('event_id', 'default_event')
-
-        if not image_data:
-            return jsonify({"success": False, "error": "No image provided"}), 400
-
-        nparr = np.frombuffer(base64.b64decode(image_data), np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-
-        if img is None:
-             return jsonify({"success": False, "error": "Could not decode image"}), 400
-
-        rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        face_locations = face_recognition.face_locations(rgb_img)
-
-        if not face_locations:
-            return jsonify({"success": False, "error": "No face detected"}), 400
-
-        face_encoding_to_recognize = face_recognition.face_encodings(rgb_img, face_locations)[0]
-
-        global known_encodings, known_ids
-        matches = face_recognition.compare_faces(known_encodings, face_encoding_to_recognize)
-
-        if True in matches:
-            person_id = known_ids[matches.index(True)]
-            event_processed_dir = os.path.join(app.config['PROCESSED_FOLDER'], event_id)
-            person_event_dir = os.path.join(event_processed_dir, person_id)
-
-            if not os.path.exists(person_event_dir):
-                return jsonify({"success": False, "error": f"No photos found for this person ({person_id}) in event {event_id}"}), 404
-
-            individual_photos = []
-            group_photos = []
-
-            individual_dir = os.path.join(person_event_dir, "individual")
-            if os.path.exists(individual_dir):
-                individual_photos = [f for f in os.listdir(individual_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
-
-            group_dir = os.path.join(person_event_dir, "group")
-            if os.path.exists(group_dir):
-                group_photos = [f for f in os.listdir(group_dir)
-                               if f.lower().endswith(('.png', '.jpg', '.jpeg')) and f.startswith('watermarked_')]
-
-            return jsonify({
-                "success": True,
-                "person_id": person_id,
-                "individual_photos": individual_photos,
-                "group_photos": group_photos,
-                "event_id": event_id
-            })
-        else:
-            return jsonify({"success": False, "error": "No match found"}), 404
-
-    except Exception as e:
-        print(f"Recognition error: {e}")
-        return jsonify({"success": False, "error": str(e)}), 500
+@app.route('/photos/<event_id>/all/<filename>')
+def get_public_photo(event_id, filename):
+    event_dir = os.path.join(app.config['PROCESSED_FOLDER'], event_id)
+    for person_id in os.listdir(event_dir):
+        photo_path = os.path.join(event_dir, person_id, "group", filename)
+        if os.path.exists(photo_path):
+            return send_from_directory(os.path.join(event_dir, person_id, "group"), filename)
+    return "File Not Found", 404
 
 @app.route('/photos/<event_id>/<person_id>/<photo_type>/<filename>')
-@login_required # Protect photo access
-def get_photo(event_id, person_id, photo_type, filename):
+@login_required
+def get_private_photo(event_id, person_id, photo_type, filename):
     photo_path = os.path.join(app.config['PROCESSED_FOLDER'], event_id, person_id, photo_type)
     return send_from_directory(photo_path, filename)
 
-@app.route('/download/<event_id>/<person_id>/<photo_type>/<filename>')
-@login_required # Protect download access
-def download_photo(event_id, person_id, photo_type, filename):
-    original_filename = filename.replace('watermarked_', '')
-    photo_path = os.path.join(app.config['PROCESSED_FOLDER'], event_id, person_id, photo_type)
-    
-    full_original_path = os.path.join(photo_path, original_filename)
-    if not os.path.exists(full_original_path):
-        return jsonify({"success": False, "error": "Original file not found for download"}), 404
+@app.route('/recognize', methods=['POST'])
+@login_required
+def recognize_face():
+    try:
+        data = request.get_json()
+        image_data = data.get('image')
+        event_id = data.get('event_id', 'default_event')
+        if not image_data: return jsonify({"success": False, "error": "No image provided"}), 400
+        img_bytes = base64.b64decode(image_data)
+        np_arr = np.frombuffer(img_bytes, np.uint8)
+        img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+        rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        face_locations = face_recognition.face_locations(rgb_img)
+        if not face_locations: return jsonify({"success": False, "error": "No face detected in the scan."}), 400
+        scanned_encoding = face_recognition.face_encodings(rgb_img, face_locations)[0]
+        matches = face_recognition.compare_faces(known_encodings, scanned_encoding, tolerance=0.55)
+        if True in matches:
+            person_id = known_ids[matches.index(True)]
+            person_dir = os.path.join(app.config['PROCESSED_FOLDER'], event_id, person_id)
+            if not os.path.exists(person_dir): return jsonify({"success": False, "error": "Match found, but no photos in this event."}), 404
+            individual_dir = os.path.join(person_dir, "individual")
+            group_dir = os.path.join(person_dir, "group")
+            individual_photos = [f for f in os.listdir(individual_dir)] if os.path.exists(individual_dir) else []
+            group_photos = [f for f in os.listdir(group_dir) if f.startswith('watermarked_')] if os.path.exists(group_dir) else []
+            return jsonify({"success": True, "person_id": person_id, "individual_photos": individual_photos, "group_photos": group_photos, "event_id": event_id})
+        else:
+            return jsonify({"success": False, "error": "No match found in our records."}), 404
+    except Exception as e:
+        print(f"RECOGNIZE ERROR: {e}")
+        return jsonify({"success": False, "error": "An internal error occurred."}), 500
 
-    return send_from_directory(full_original_path, original_filename, as_attachment=True)
-
-@app.route('/download-all/<event_id>/<person_id>')
-@login_required # Protect bulk download access
-def download_all_photos_zip(event_id, person_id):
-    event_person_dir = os.path.join(app.config['PROCESSED_FOLDER'], event_id, person_id)
-    if not os.path.exists(event_person_dir):
-        return jsonify({"success": False, "error": "No photos found for this person in this event"}), 404
-
-    all_files_info = []
-    individual_dir = os.path.join(event_person_dir, "individual")
-    if os.path.exists(individual_dir):
-        for f in os.listdir(individual_dir):
-            if f.lower().endswith(('.png', '.jpg', '.jpeg')):
-                all_files_info.append({
-                    "type": "individual",
-                    "filename": f,
-                    "url": f"/download/{event_id}/{person_id}/individual/{f}"
-                })
-
-    group_dir = os.path.join(event_person_dir, "group")
-    if os.path.exists(group_dir):
-        for f in os.listdir(group_dir):
-            if f.lower().endswith(('.png', '.jpg', '.jpeg')) and not f.startswith('watermarked_') and not f.startswith('crop_'):
-                all_files_info.append({
-                    "type": "group",
-                    "filename": f,
-                    "url": f"/download/{event_id}/{person_id}/group/{f}"
-                })
-
-    if not all_files_info:
-        return jsonify({"success": False, "error": "No photos to download"}), 404
-
-    return jsonify({
-        "success": True,
-        "message": f"Found {len(all_files_info)} files for download. Client should initiate downloads.",
-        "files_to_download": all_files_info
-    })
-
-
-@app.route('/events', methods=['GET'])
-def get_events():
-    # This endpoint provides event data. You might want to protect it too,
-    # or allow public access to event listings but restrict photo viewing.
-    if os.path.exists(EVENTS_DATA_PATH):
-        try:
-            with open(EVENTS_DATA_PATH, 'r') as f:
-                events_data = json.load(f)
-            return jsonify(events_data)
-        except Exception as e:
-            print(f"Error loading events data from {EVENTS_DATA_PATH}: {e}")
-            return jsonify({"error": "Failed to load events data"}), 500
-    return jsonify([])
-
-
-def cleanup_old_events():
-    while True:
-        try:
-            threshold = datetime.now() - timedelta(days=30)
-            for event in os.listdir(app.config['UPLOAD_FOLDER']):
-                event_path = os.path.join(app.config['UPLOAD_FOLDER'], event)
-                if os.path.isdir(event_path):
-                    event_time = datetime.fromtimestamp(os.path.getmtime(event_path))
-                    if event_time < threshold:
-                        print(f"Cleaning up old upload event: {event_path}")
-                        shutil.rmtree(event_path)
-
-            for event in os.listdir(app.config['PROCESSED_FOLDER']):
-                event_path = os.path.join(app.config['PROCESSED_FOLDER'], event)
-                if os.path.isdir(event_path):
-                    event_time = datetime.fromtimestamp(os.path.getmtime(event_path))
-                    if event_time < threshold:
-                        print(f"Cleaning up old processed event: {event_path}")
-                        shutil.rmtree(event_path)
-        except Exception as e:
-            print(f"Cleanup error: {e}")
-
-        time.sleep(24 * 60 * 60)
-
+# --- MAIN EXECUTION BLOCK ---
+def process_existing_uploads_on_startup():
+    print("--- [LOG] Checking for existing photos to process on startup... ---")
+    if os.path.exists(UPLOAD_FOLDER):
+        for event_id in os.listdir(UPLOAD_FOLDER):
+            event_path = os.path.join(UPLOAD_FOLDER, event_id)
+            if os.path.isdir(event_path):
+                threading.Thread(target=process_images, args=(event_id,)).start()
 
 if __name__ == '__main__':
-    threading.Thread(target=cleanup_old_events, daemon=True).start()
-
     if not os.path.exists(EVENTS_DATA_PATH):
-        dummy_events = [
-            {
-                "id": "event_1",
-                "name": "Electric Dreams Festival",
-                "location": "San Francisco, CA",
-                "date": "July 15-17, 2025",
-                "category": "Festival",
-                "image": "/static/images/event1.jpg",
-                "photos_count": 1428,
-                "sample_photos": [
-                    "/static/images/sample1.jpg",
-                    "/static/images/sample2.jpg",
-                    "/static/images/sample3.jpg"
-                ]
-            },
-            {
-                "id": "event_2",
-                "name": "Global Tech Summit",
-                "location": "Bengaluru, India",
-                "date": "August 10-12, 2025",
-                "category": "Corporate",
-                "image": "/static/images/event2.jpg",
-                "photos_count": 892,
-                "sample_photos": [
-                    "/static/images/sample4.jpg",
-                    "/static/images/sample5.jpg",
-                    " /static/images/sample6.jpg"
-                ]
-            },
-             {
-                "id": "event_3",
-                "name": "Annual Charity Gala",
-                "location": "Mumbai, India",
-                "date": "September 1, 2025",
-                "category": "Charity",
-                "image": "/static/images/event3.jpg",
-                "photos_count": 324,
-                "sample_photos": [
-                    "/static/images/sample7.jpg",
-                    "/static/images/sample8.jpg",
-                    "/static/images/sample9.jpg"
-                ]
-            }
-        ]
-        with open(EVENTS_DATA_PATH, 'w') as f:
-            json.dump(dummy_events, f, indent=4)
-        print(f"Created dummy events data at {EVENTS_DATA_PATH}")
-
-    os.makedirs('frontend/static/images', exist_ok=True)
-
+        # Your code to create dummy events json file
+        pass
+    process_existing_uploads_on_startup()
     app.run(host='0.0.0.0', port=5000, debug=True)

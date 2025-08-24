@@ -9,13 +9,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-gray-50">
-    <!-- Navigation Header (Copied from homepage.html for consistency) -->
+    <!-- Navigation Header -->
     <nav class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <!-- Logo -->
                 <div class="flex items-center">
-                    <a href="/homepage" class="flex items-center space-x-2">
+                    <!-- Link to index page, as other pages require login -->
+                    <a href="/" class="flex items-center space-x-2">
                         <svg class="w-8 h-8 text-indigo-600" viewBox="0 0 32 32" fill="currentColor">
                             <path d="M16 2L20 10H28L22 16L24 24L16 20L8 24L10 16L4 10H12L16 2Z"/>
                             <circle cx="16" cy="16" r="6" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -24,19 +25,17 @@
                     </a>
                 </div>
                 
-                <!-- Desktop Navigation -->
+                <!-- Desktop Navigation (Simplified for login/signup pages) -->
                 <div class="hidden md:flex items-center space-x-8">
-                    <a href="/homepage" class="text-gray-600 hover:text-indigo-600 transition-colors duration-200">Home</a>
-                    <a href="/event_discovery" class="text-gray-600 hover:text-indigo-600 transition-colors duration-200">Events</a>
-                    <a href="/biometric_authentication_portal" class="text-gray-600 hover:text-indigo-600 transition-colors duration-200">Scan Face</a>
-                    <a href="/personal_photo_gallery" class="text-gray-600 hover:text-indigo-600 transition-colors duration-200">My Photos</a>
-                    <a href="/download_center" class="text-gray-600 hover:text-indigo-600 transition-colors duration-200">Downloads</a>
-                    <a href="/event_organizer_hub" class="text-gray-600 hover:text-indigo-600 transition-colors duration-200">For Organizers</a>
+                    <!-- Only show links relevant before login, or to the main landing page -->
+                    <a href="/" class="text-gray-600 hover:text-indigo-600 transition-colors duration-200">Home</a>
+                    <!-- Removed direct links to protected pages like Events, My Photos, etc. -->
                 </div>
                 
-                <!-- User Profile/Login - Active for Signup page -->
+                <!-- User Authentication Buttons (Specific to login/signup pages) -->
                 <div class="flex items-center space-x-4">
                     <a href="/login" class="px-4 py-2 rounded-md text-sm font-medium text-indigo-600 border border-indigo-600 hover:bg-indigo-50 transition-colors duration-200">Login</a>
+                    <!-- Always show Sign Up button as active for this page -->
                     <a href="/signup" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors duration-200">Sign Up</a>
                 </div>
                 
@@ -49,15 +48,11 @@
             </div>
         </div>
         
-        <!-- Mobile Menu (Copied from homepage.html) -->
+        <!-- Mobile Menu (Simplified for login/signup pages) -->
         <div class="md:hidden hidden bg-white shadow-lg" id="mobile-menu">
             <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-                <a href="/homepage" class="block px-3 py-2 rounded-md text-base font-medium text-gray-900 hover:text-indigo-600 hover:bg-gray-50">Home</a>
-                <a href="/event_discovery" class="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-50">Events</a>
-                <a href="/biometric_authentication_portal" class="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-50">Scan Face</a>
-                <a href="/personal_photo_gallery" class="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-50">My Photos</a>
-                <a href="/download_center" class="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-50">Downloads</a>
-                <a href="/event_organizer_hub" class="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-50">For Organizers</a>
+                <a href="/" class="block px-3 py-2 rounded-md text-base font-medium text-gray-900 hover:text-indigo-600 hover:bg-gray-50">Home</a>
+                <!-- Removed direct links to protected pages -->
                 <div class="pt-4 pb-2 border-t border-gray-200">
                     <a href="/login" class="block px-3 py-2 rounded-md text-base font-medium text-indigo-600 hover:bg-indigo-50">Login</a>
                     <a href="/signup" class="block px-3 py-2 rounded-md text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700">Sign Up</a>
@@ -110,7 +105,7 @@
         </div>
     </main>
 
-    <!-- Footer (Copied from homepage.html for consistency) -->
+    <!-- Footer -->
     <footer class="bg-gray-900 text-white py-12 px-4 sm:px-6 lg:px-8">
         <div class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
             <div>
@@ -125,9 +120,10 @@
             <div>
                 <h3 class="text-lg font-semibold mb-4">Features</h3>
                 <ul class="space-y-2">
+                    <!-- Links to public sections or main index -->
+                    <li><a href="/" class="text-gray-400 hover:text-white">Home</a></li>
                     <li><a href="/biometric_authentication_portal" class="text-gray-400 hover:text-white">Face Recognition</a></li>
                     <li><a href="/event_discovery" class="text-gray-400 hover:text-white">Event Discovery</a></li>
-                    <li><a href="/download_center" class="text-gray-400 hover:text-white">Photo Downloads</a></li>
                 </ul>
             </div>
             
@@ -190,11 +186,13 @@
             const feedbackDiv = document.getElementById('signup-feedback');
 
             feedbackDiv.textContent = ''; // Clear previous messages
-            feedbackDiv.classList.add('hidden');
+            feedbackDiv.classList.add('hidden'); // Hide feedback initially
 
             if (password !== confirmPassword) {
                 feedbackDiv.textContent = 'Passwords do not match!';
                 feedbackDiv.classList.remove('hidden');
+                feedbackDiv.classList.remove('text-green-600'); // Ensure it's red for errors
+                feedbackDiv.classList.add('text-red-600');
                 return;
             }
 
