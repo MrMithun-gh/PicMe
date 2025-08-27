@@ -10,6 +10,10 @@ import threading
 import json
 import mysql.connector
 from werkzeug.security import generate_password_hash, check_password_hash
+import qrcode
+from io import BytesIO
+import uuid
+from datetime import datetime
 
 # NEW: Import the model
 from face_model import FaceRecognitionModel
@@ -53,7 +57,7 @@ def process_images(event_id):
         
         print(f"--- [PROCESS] Starting for event: {event_id} ---")
         for filename in os.listdir(input_dir):
-            if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+            if filename.lower().endswith(('.png', '.jpg', '.jpeg')) and not filename.endswith('_qr.png'):
                 image_path = os.path.join(input_dir, filename)
                 print(f"--- [PROCESS] Image: {filename}")
                 try:
@@ -105,6 +109,10 @@ def serve_biometric_authentication_portal(): return render_template('biometric_a
 @login_required
 def serve_personal_photo_gallery(): return render_template('personal_photo_gallery.html')
 
+# NEW: Event organizer page route
+@app.route('/event_organizer')
+@login_required
+def serve_event_organizer(): return render_template('event_organizer.html')
 
 # --- AUTHENTICATION API ROUTES ---
 @app.route('/register', methods=['POST'])
@@ -159,7 +167,15 @@ def logout_user():
 # --- CORE API & FILE SERVING ROUTES ---
 @app.route('/events', methods=['GET'])
 def get_events():
-    with open(EVENTS_DATA_PATH, 'r') as f: return jsonify(json.load(f))
+    try:
+        with open(EVENTS_DATA_PATH, 'r') as f:
+            events_data = json.load(f)
+        return jsonify(events_data)
+    except FileNotFoundError:
+        return jsonify([])  # Return empty list if file doesn't exist
+    except Exception as e:
+        print(f"Error loading events: {e}")
+        return jsonify([])
 
 @app.route('/recognize', methods=['POST'])
 @login_required
@@ -200,7 +216,149 @@ def recognize_face():
         print(f"RECOGNIZE ERROR: {e}")
         return jsonify({"success": False, "error": "An internal error occurred."}), 500
 
-# (All other file-serving routes like /api/events/<id>/photos are the same)
+# --- EVENT ORGANIZER API ROUTES ---
+@app.route('/api/create_event', methods=['POST'])
+@login_required
+def create_event():
+    try:
+        data = request.get_json()
+        event_name = data.get('eventName')
+        event_location = data.get('eventLocation')
+        event_date = data.get('eventDate')
+        event_category = data.get('eventCategory', 'General')
+        
+        if not all([event_name, event_location, event_date]):
+            return jsonify({"success": False, "error": "All fields are required"}), 400
+        
+        # Generate unique event ID
+        event_id = f"event_{uuid.uuid4().hex[:8]}"
+        
+        # Create event directory structure
+        event_upload_dir = os.path.join(app.config['UPLOAD_FOLDER'], event_id)
+        event_processed_dir = os.path.join(app.config['PROCESSED_FOLDER'], event_id)
+        os.makedirs(event_upload_dir, exist_ok=True)
+        os.makedirs(event_processed_dir, exist_ok=True)
+        
+        # Generate QR code for the event
+        qr_data = f"http://localhost:5000/event_detail?event_id={event_id}"  # Update with your domain
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr.add_data(qr_data)
+        qr.make(fit=True)
+        
+        # Save QR code image
+        qr_img = qr.make_image(fill_color="black", back_color="white")
+        qr_path = os.path.join(event_upload_dir, f"{event_id}_qr.png")
+        qr_img.save(qr_path)
+        
+        # Load existing events data
+        if os.path.exists(EVENTS_DATA_PATH):
+            with open(EVENTS_DATA_PATH, 'r') as f:
+                events_data = json.load(f)
+        else:
+            events_data = []
+        
+        # Add new event
+        new_event = {
+            "id": event_id,
+            "name": event_name,
+            "location": event_location,
+            "date": event_date,
+            "category": event_category,
+            "image": "/static/images/default_event.jpg",
+            "photos_count": 0,
+            "qr_code": f"/api/qr_code/{event_id}",
+            "created_by": session.get('user_id'),
+            "created_at": datetime.now().isoformat(),
+            "sample_photos": []
+        }
+        
+        events_data.append(new_event)
+        
+        # Save updated events data
+        with open(EVENTS_DATA_PATH, 'w') as f:
+            json.dump(events_data, f, indent=2)
+        
+        return jsonify({"success": True, "event_id": event_id, "message": "Event created successfully!"}), 201
+        
+    except Exception as e:
+        print(f"Error creating event: {e}")
+        return jsonify({"success": False, "error": "Failed to create event"}), 500
+
+@app.route('/api/qr_code/<event_id>')
+def get_qr_code(event_id):
+    qr_path = os.path.join(app.config['UPLOAD_FOLDER'], event_id, f"{event_id}_qr.png")
+    if os.path.exists(qr_path):
+        return send_from_directory(os.path.join(app.config['UPLOAD_FOLDER'], event_id), f"{event_id}_qr.png")
+    return "QR Code not found", 404
+
+@app.route('/api/upload_photos/<event_id>', methods=['POST'])
+@login_required
+def upload_event_photos(event_id):
+    try:
+        if 'photos' not in request.files:
+            return jsonify({"success": False, "error": "No photos uploaded"}), 400
+        
+        files = request.files.getlist('photos')
+        if not files or files[0].filename == '':
+            return jsonify({"success": False, "error": "No photos selected"}), 400
+        
+        event_dir = os.path.join(app.config['UPLOAD_FOLDER'], event_id)
+        if not os.path.exists(event_dir):
+            return jsonify({"success": False, "error": "Event not found"}), 404
+        
+        uploaded_files = []
+        for file in files:
+            if file and file.filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+                filename = f"{uuid.uuid4().hex[:8]}_{file.filename}"
+                file_path = os.path.join(event_dir, filename)
+                file.save(file_path)
+                uploaded_files.append(filename)
+        
+        # Start processing photos in background
+        threading.Thread(target=process_images, args=(event_id,)).start()
+        
+        # Update photo count in events data
+        if os.path.exists(EVENTS_DATA_PATH):
+            with open(EVENTS_DATA_PATH, 'r') as f:
+                events_data = json.load(f)
+            
+            for event in events_data:
+                if event['id'] == event_id:
+                    event['photos_count'] += len(uploaded_files)
+                    break
+            
+            with open(EVENTS_DATA_PATH, 'w') as f:
+                json.dump(events_data, f, indent=2)
+        
+        return jsonify({
+            "success": True, 
+            "message": f"Successfully uploaded {len(uploaded_files)} photos",
+            "uploaded_files": uploaded_files
+        }), 200
+        
+    except Exception as e:
+        print(f"Error uploading photos: {e}")
+        return jsonify({"success": False, "error": "Failed to upload photos"}), 500
+
+@app.route('/api/my_events')
+@login_required
+def get_my_events():
+    try:
+        if os.path.exists(EVENTS_DATA_PATH):
+            with open(EVENTS_DATA_PATH, 'r') as f:
+                all_events = json.load(f)
+            
+            # Filter events created by current user
+            user_events = [event for event in all_events if event.get('created_by') == session.get('user_id')]
+            return jsonify({"success": True, "events": user_events})
+        
+        return jsonify({"success": True, "events": []})
+        
+    except Exception as e:
+        print(f"Error fetching events: {e}")
+        return jsonify({"success": False, "error": "Failed to fetch events"}), 500
+
+# --- EXISTING FILE SERVING ROUTES ---
 @app.route('/api/events/<event_id>/photos', methods=['GET'])
 def get_event_photos(event_id):
     event_dir = os.path.join(app.config['PROCESSED_FOLDER'], event_id)
@@ -230,7 +388,6 @@ def get_public_photo(event_id, filename):
 def get_private_photo(event_id, person_id, photo_type, filename):
     photo_path = os.path.join(app.config['PROCESSED_FOLDER'], event_id, person_id, photo_type)
     return send_from_directory(photo_path, filename)
-
 
 # --- MAIN EXECUTION BLOCK ---
 def process_existing_uploads_on_startup():
