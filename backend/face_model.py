@@ -70,7 +70,7 @@ class FaceRecognitionModel:
         best_match_index = np.argmin(face_distances)
 
         # HIGH-ACCURACY THRESHOLD: Only a very close match is accepted.
-        STRICT_TOLERANCE = 0.5
+        STRICT_TOLERANCE = 0.54
 
         if face_distances[best_match_index] <= STRICT_TOLERANCE:
             person_id = self.known_ids[best_match_index]
