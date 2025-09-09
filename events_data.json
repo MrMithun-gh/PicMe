@@ -1,54 +1,12 @@
 [
   {
-    "id": "event_1",
-    "name": "Electric Dreams Festival",
-    "location": "San Francisco, CA",
-    "date": "July 15-17, 2025",
-    "category": "Festival",
-    "image": "/static/images/event1.jpg",
-    "photos_count": 1428,
-    "sample_photos": [
-      "/static/images/sample1.jpg",
-      "/static/images/sample2.jpg",
-      "/static/images/sample3.jpg"
-    ]
-  },
-  {
-    "id": "event_2",
-    "name": "Global Tech Summit",
-    "location": "Bengaluru, India",
-    "date": "August 10-12, 2025",
-    "category": "Corporate",
-    "image": "/static/images/event2.jpg",
-    "photos_count": 892,
-    "sample_photos": [
-      "/static/images/sample4.jpg",
-      "/static/images/sample5.jpg",
-      "/static/images/sample6.jpg"
-    ]
-  },
-  {
-    "id": "event_3",
-    "name": "Annual Charity Gala",
-    "location": "Mumbai, India",
-    "date": "September 1, 2025",
-    "category": "Charity",
-    "image": "/static/images/event3.jpg",
-    "photos_count": 324,
-    "sample_photos": [
-      "/static/images/sample7.jpg",
-      "/static/images/sample8.jpg",
-      "/static/images/sample9.jpg"
-    ]
-  },
-  {
     "id": "event_931cd6b8",
     "name": "kannada",
     "location": "bengaluru",
     "date": "2025-11-04",
     "category": "Conference",
     "image": "/static/images/default_event.jpg",
-    "photos_count": 0,
+    "photos_count": 1,
     "qr_code": "/api/qr_code/event_931cd6b8",
     "created_by": 1,
     "created_at": "2025-08-27T16:48:59.308790",

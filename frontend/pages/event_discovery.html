@@ -5,12 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Event Discovery - PicMe</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
-<body class="bg-gray-50">
-    <nav class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<body class="bg-gray-100">
+    <nav class="bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm sticky top-0 z-50">
+         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <a href="/homepage" class="flex items-center space-x-2">
                     <svg class="w-8 h-8 text-indigo-600" viewBox="0 0 32 32" fill="currentColor"><path d="M16 2L20 10H28L22 16L24 24L16 20L8 24L10 16L4 10H12L16 2Z"/><circle cx="16" cy="16" r="6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
@@ -18,137 +17,132 @@
                 </a>
                 <div class="hidden md:flex items-center space-x-8">
                     <a href="/homepage" class="text-gray-600 hover:text-indigo-600">Home</a>
-                    <a href="/event_discovery" class="text-indigo-600 font-medium">Events</a>
+                    <a href="/event_discovery" class="text-indigo-600 hover:text-indigo-600 font-bold">Events</a>
                     <a href="/personal_photo_gallery" class="text-gray-600 hover:text-indigo-600">My Photos</a>
+                    <a href="/event_organizer" class="text-gray-600 hover:text-indigo-600">My Dashboard</a>
                 </div>
                 <div class="flex items-center space-x-4">
-                     <span class="text-gray-600 text-sm font-medium hidden md:block">Welcome, {{ session.get('user_email', 'Guest') }}</span>
                     <a href="/logout" class="px-4 py-2 rounded-md text-sm font-medium text-red-600 border border-red-600 hover:bg-red-50">Logout</a>
                 </div>
             </div>
         </div>
     </nav>
 
-    <section class="pt-24 pb-12 bg-indigo-600 text-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="text-4xl md:text-5xl font-bold mb-4">Discover Your Event Memories</h1>
-            <p class="text-lg text-indigo-200 max-w-3xl mx-auto mb-8">
-                Search for an event below or scan an event QR code to get started.
-            </p>
-            <div class="max-w-3xl mx-auto relative">
-                <input type="text" id="event-search-input" placeholder="Start typing an event name..." class="w-full px-5 py-3 rounded-full text-gray-900 focus:outline-none focus:ring-4 focus:ring-indigo-300">
-                <div id="suggestions-box" class="hidden absolute top-full left-0 right-0 bg-white text-left rounded-lg shadow-lg mt-2 z-10"></div>
-                <div class="mt-4 flex justify-center items-center space-x-4">
-                    <button id="scan-qr-camera" class="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-full text-sm font-medium">
-                        <i class="fas fa-camera mr-2"></i>Scan with Camera
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="text-center bg-indigo-700 text-white p-10 rounded-xl shadow-lg">
+            <h1 class="text-5xl font-bold">Discover Events</h1>
+            <p class="mt-4 text-lg text-indigo-200">Search for an event below or scan an event QR code to get started.</p>
+            
+            <div class="mt-8 max-w-lg mx-auto">
+                <div class="flex items-center space-x-4">
+                    <button id="scan-camera-btn" class="w-full bg-white text-indigo-600 font-semibold py-3 px-4 rounded-lg shadow hover:bg-indigo-50 transition">
+                        📷 Scan with Camera
                     </button>
-                    <button id="scan-qr-file" class="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-full text-sm font-medium">
-                        <i class="fas fa-image mr-2"></i>Upload QR Image
+                    <button id="upload-qr-btn" class="w-full bg-white text-indigo-600 font-semibold py-3 px-4 rounded-lg shadow hover:bg-indigo-50 transition">
+                        📤 Upload QR Image
                     </button>
                     <input type="file" id="qr-file-input" accept="image/*" class="hidden">
                 </div>
             </div>
         </div>
-    </section>
 
-    <div id="qr-scanner-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg p-6 relative w-full max-w-md">
-            <h3 class="text-lg font-bold mb-4">Point Camera at QR Code</h3>
-            <div id="qr-reader" class="w-full"></div>
-            <button id="close-qr-scanner" class="absolute top-2 right-2 px-3 py-1 bg-red-500 text-white rounded-full">&times;</button>
+        <div id="reader" class="w-full max-w-md mx-auto mt-6 rounded-lg overflow-hidden bg-gray-200"></div>
+        <div id="scan-status" class="text-center text-gray-600 mt-4 font-medium"></div>
+
+        <div class="mt-16">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">All Events</h2>
+            <div id="events-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <p id="loading-events" class="text-gray-500 col-span-full">Loading events...</p>
+            </div>
         </div>
-    </div>
-    
-    <section class="py-16 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="text-3xl font-bold text-gray-900 mb-8">All Events</h2>
-            <div id="events-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                </div>
-        </div>
-    </section>
+    </main>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            let allEvents = [];
-            const searchInput = document.getElementById('event-search-input');
-            const suggestionsBox = document.getElementById('suggestions-box');
-            const eventsGrid = document.getElementById('events-grid');
-
-            async function fetchEvents() {
-                try {
-                    const response = await fetch('/events');
-                    allEvents = await response.json();
-                    renderEvents(allEvents);
-                } catch (error) {
-                    console.error("Error loading events:", error);
-                }
-            }
-
-            function renderEvents(events) {
-                let html = '';
-                events.forEach(event => {
-                    html += `
-                        <div class="bg-gray-50 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                            <img src="${event.image}" alt="${event.name}" class="w-full h-48 object-cover">
-                            <div class="p-5">
-                                <h3 class="text-lg font-bold text-gray-900">${event.name}</h3>
-                                <p class="text-gray-600 text-sm mb-4">${event.date} • ${event.location}</p>
-                                <a href="/event_detail?event_id=${event.id}" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">View Photos →</a>
-                            </div>
-                        </div>`;
-                });
-                eventsGrid.innerHTML = html;
-            }
-
-            searchInput.addEventListener('input', () => {
-                const query = searchInput.value.toLowerCase();
-                if (query.length === 0) {
-                    suggestionsBox.classList.add('hidden');
-                    renderEvents(allEvents);
-                    return;
-                }
-                const filteredEvents = allEvents.filter(event => event.name.toLowerCase().includes(query));
-                renderEvents(filteredEvents);
-            });
-
-            const qrModal = document.getElementById('qr-scanner-modal');
-            const closeQrScannerBtn = document.getElementById('close-qr-scanner');
-            const scanCameraBtn = document.getElementById('scan-qr-camera');
-            const scanFileBtn = document.getElementById('scan-qr-file');
+        document.addEventListener('DOMContentLoaded', () => {
+            const scanCameraBtn = document.getElementById('scan-camera-btn');
+            const uploadQrBtn = document.getElementById('upload-qr-btn');
             const qrFileInput = document.getElementById('qr-file-input');
-            const html5QrCode = new Html5Qrcode("qr-reader");
+            const readerDiv = document.getElementById('reader');
+            const scanStatus = document.getElementById('scan-status');
 
-            const qrCodeSuccessCallback = (decodedText, decodedResult) => {
-                html5QrCode.stop().then(() => {
-                    let eventId = decodedText;
-                    try {
-                        const url = new URL(decodedText);
-                        eventId = url.searchParams.get('event_id') || url.pathname.split('/').pop();
-                    } catch (e) { /* Assume it's just the event_id */ }
-                    window.location.href = `/event_detail?event_id=${eventId}`;
-                });
+            const handleScanSuccess = (decodedText) => {
+                scanStatus.textContent = `Success! Navigating...`;
+                try {
+                    const url = new URL(decodedText);
+                    const eventId = url.searchParams.get("event_id");
+                    if (eventId) { window.location.href = `/event_detail?event_id=${eventId}`; } 
+                    else { throw new Error("No event_id in QR code."); }
+                } catch (error) {
+                    alert("This QR code is not a valid PicMe event link.");
+                    scanStatus.textContent = '';
+                }
             };
             
-            scanCameraBtn.addEventListener('click', () => {
-                qrModal.classList.remove('hidden');
-                html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, qrCodeSuccessCallback);
-            });
-
-            closeQrScannerBtn.addEventListener('click', () => {
-                html5QrCode.stop().then(() => qrModal.classList.add('hidden'));
-            });
-
-            scanFileBtn.addEventListener('click', () => qrFileInput.click());
-
+            uploadQrBtn.addEventListener('click', () => qrFileInput.click());
             qrFileInput.addEventListener('change', e => {
-                if (e.target.files.length == 0) return;
-                const imageFile = e.target.files[0];
-                html5QrCode.scanFile(imageFile, true)
-                .then(qrCodeSuccessCallback)
-                .catch(err => alert(`Error scanning file. ${err}`));
+                if (e.target.files.length === 0) return;
+                scanStatus.textContent = 'Scanning file...';
+                const html5QrCode = new Html5Qrcode("reader");
+                html5QrCode.scanFile(e.target.files[0], false).then(handleScanSuccess)
+                    .catch(err => {
+                        scanStatus.textContent = '';
+                        alert(`Could not scan QR code from image.`);
+                    });
             });
 
-            fetchEvents();
+            let cameraScanner = null;
+            scanCameraBtn.addEventListener('click', () => {
+                if (cameraScanner && cameraScanner.isScanning) {
+                    cameraScanner.stop().then(() => {
+                        scanCameraBtn.innerHTML = '📷 Scan with Camera';
+                        readerDiv.style.display = 'none';
+                        scanStatus.textContent = '';
+                    });
+                } else {
+                    cameraScanner = new Html5Qrcode('reader');
+                    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+                    readerDiv.style.display = 'block';
+                    scanStatus.textContent = 'Starting camera...';
+                    scanCameraBtn.innerHTML = '⏹️ Stop Camera';
+                    cameraScanner.start({ facingMode: "environment" }, config, handleScanSuccess, () => {})
+                        .catch(err => {
+                            alert("Could not start camera. Please grant permissions.");
+                            scanCameraBtn.innerHTML = '📷 Scan with Camera';
+                            readerDiv.style.display = 'none';
+                            scanStatus.textContent = '';
+                        });
+                }
+            });
+
+            async function loadEvents() {
+                try {
+                    const response = await fetch('/api/events');
+                    const events = await response.json();
+                    const grid = document.getElementById('events-grid');
+                    document.getElementById('loading-events').style.display = 'none';
+                    if (events.length === 0) {
+                        grid.innerHTML = '<p class="text-gray-500 col-span-full">No events have been created yet.</p>';
+                        return;
+                    }
+                    grid.innerHTML = events.map(event => `
+                        <a href="/event_detail?event_id=${event.id}" class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow group">
+                            <div class="relative">
+                                <img src="${event.image || '/static/images/default_event.jpg'}" alt="${event.name}" class="w-full h-48 object-cover">
+                                <span class="absolute top-2 right-2 bg-indigo-100 text-indigo-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${event.category || 'General'}</span>
+                            </div>
+                            <div class="p-4">
+                                <h3 class="text-lg font-bold text-gray-900 group-hover:text-indigo-600">${event.name}</h3>
+                                <p class="text-sm text-gray-600 mt-1">${event.location}</p>
+                                <p class="text-sm text-gray-500 mt-1">${new Date(event.date).toLocaleDateString()}</p>
+                            </div>
+                        </a>
+                    `).join('');
+                } catch (error) {
+                    console.error('Failed to load events:', error);
+                    document.getElementById('loading-events').textContent = 'Could not load events.';
+                }
+            }
+            loadEvents();
         });
     </script>
 </body>

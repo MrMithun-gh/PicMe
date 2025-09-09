@@ -5,9 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Event Details - PicMe</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fade-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .animate-fade-in { animation: fade-in 0.5s ease-in-out forwards; }
+    </style>
 </head>
 <body class="bg-gray-50">
-    <nav class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm">
+    <nav class="bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <a href="/homepage" class="flex items-center space-x-2">
@@ -18,9 +22,9 @@
                     <a href="/homepage" class="text-gray-600 hover:text-indigo-600">Home</a>
                     <a href="/event_discovery" class="text-gray-600 hover:text-indigo-600">Events</a>
                     <a href="/personal_photo_gallery" class="text-gray-600 hover:text-indigo-600">My Photos</a>
+                    <a href="/event_organizer" class="text-gray-600 hover:text-indigo-600">My Dashboard</a>
                 </div>
                 <div class="flex items-center space-x-4">
-                     <span class="text-gray-600 text-sm font-medium hidden md:block">Welcome, {{ session.get('user_email', 'Guest') }}</span>
                     <a href="/logout" class="px-4 py-2 rounded-md text-sm font-medium text-red-600 border border-red-600 hover:bg-red-50">Logout</a>
                 </div>
             </div>
@@ -29,20 +33,18 @@
 
     <main class="pt-24 pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-12">
-            <h1 id="event-name" class="text-4xl font-bold text-gray-900">Loading Event...</h1>
+            <p id="event-category" class="text-sm font-semibold text-indigo-600 uppercase tracking-wider"></p>
+            <h1 id="event-name" class="text-4xl font-bold text-gray-900 mt-2">Loading Event...</h1>
             <p id="event-date" class="text-lg text-gray-600 mt-2"></p>
-            <a id="scan-face-link" href="#" class="mt-6 inline-block px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors">
+            <a id="scan-face-link" href="#" class="mt-8 inline-block px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors">
                 Scan My Face to Find My Photos
             </a>
         </div>
 
         <div class="border-t border-gray-200 pt-10">
             <h2 class="text-2xl font-bold text-gray-900 mb-6">Event Gallery</h2>
+            <div id="loading-message" class="text-center text-gray-500 py-8">Loading photos...</div>
             <div id="event-photos-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                </div>
-            <div id="loading-message" class="col-span-full text-center text-gray-500 py-8">Loading photos...</div>
-            <div class="text-center mt-8">
-                <button id="load-more-btn" class="hidden px-6 py-3 bg-white border border-gray-300 rounded-lg font-semibold hover:bg-gray-50">Load More</button>
             </div>
         </div>
     </main>
@@ -53,13 +55,10 @@
             const eventId = urlParams.get('event_id');
             const eventNameEl = document.getElementById('event-name');
             const eventDateEl = document.getElementById('event-date');
+            const eventCategoryEl = document.getElementById('event-category'); // Get the new element
             const scanLink = document.getElementById('scan-face-link');
             const grid = document.getElementById('event-photos-grid');
             const loadingMessage = document.getElementById('loading-message');
-            const loadMoreBtn = document.getElementById('load-more-btn');
-
-            let currentPage = 1;
-            let isLoading = false;
 
             if (!eventId) {
                 eventNameEl.textContent = "Event Not Found";
@@ -69,77 +68,40 @@
 
             scanLink.href = `/biometric_authentication_portal?event_id=${eventId}`;
 
-            // Function to fetch a page of photos
-            async function fetchPhotos(page) {
-                if (isLoading) return;
-                isLoading = true;
-                loadingMessage.style.display = 'block';
-                loadMoreBtn.classList.add('hidden');
-
-                try {
-                    const photosResponse = await fetch(`/api/events/${eventId}/photos?page=${page}&limit=12`);
-                    const data = await photosResponse.json();
-
-                    if (data.success && data.photos.length > 0) {
-                        if (page === 1) {
-                           loadingMessage.style.display = 'none'; // Hide initial loading message
-                        }
-                        
-                        let html = '';
-                        data.photos.forEach(photoUrl => {
-                            html += `<div class="aspect-w-1 aspect-h-1"><img src="${photoUrl}" class="w-full h-full object-cover rounded-lg shadow-md animate-fade-in" loading="lazy"></div>`;
-                        });
-                        grid.insertAdjacentHTML('beforeend', html);
-                        
-                        // Show or hide the "Load More" button
-                        if (data.has_next) {
-                            loadMoreBtn.classList.remove('hidden');
-                            currentPage++;
-                        } else {
-                            loadMoreBtn.classList.add('hidden');
-                        }
-
-                    } else {
-                        if(page === 1) { // Only show this if it's the first page
-                           loadingMessage.textContent = data.error || 'No photos have been processed for this event yet.';
-                        }
-                    }
-                } catch (error) {
-                    console.error("Could not load event photos:", error);
-                    loadingMessage.textContent = 'Failed to load photos. The server may be down.';
-                } finally {
-                    isLoading = false;
-                     if (grid.innerHTML === '') {
-                        // If grid is still empty, keep the message
-                    } else {
-                        loadingMessage.style.display = 'none';
-                    }
-                }
-            }
-
-            // Load event metadata
             try {
-                const eventsResponse = await fetch('/events');
-                const events = await eventsResponse.json();
-                const currentEvent = events.find(e => e.id === eventId);
-                if (currentEvent) {
+                const eventResponse = await fetch(`/api/events/${eventId}`);
+                const data = await eventResponse.json();
+                if (data.success) {
+                    const currentEvent = data.event;
                     eventNameEl.textContent = currentEvent.name;
-                    eventDateEl.textContent = currentEvent.date;
+                    eventCategoryEl.textContent = currentEvent.category || 'General'; // Set the category text
+                    eventDateEl.textContent = new Date(currentEvent.date).toLocaleDateString('en-US', {
+                        year: 'numeric', month: 'long', day: 'numeric'
+                    });
+                } else {
+                    eventNameEl.textContent = "Event Not Found";
                 }
             } catch (error) {
                 console.error("Could not load event details:", error);
+                eventNameEl.textContent = "Error Loading Event";
             }
-
-            // Add click listener for the "Load More" button
-            loadMoreBtn.addEventListener('click', () => fetchPhotos(currentPage));
-
-            // Initial load of the first page of photos
-            fetchPhotos(currentPage);
+            
+            try {
+                const photosResponse = await fetch(`/api/events/${eventId}/photos`);
+                const data = await photosResponse.json();
+                if (data.success && data.photos.length > 0) {
+                    loadingMessage.style.display = 'none';
+                    grid.innerHTML = data.photos.map(photoUrl => 
+                        `<div class="aspect-w-1 aspect-h-1 opacity-0 animate-fade-in"><img src="${photoUrl}" class="w-full h-full object-cover rounded-lg shadow-md" loading="lazy"></div>`
+                    ).join('');
+                } else {
+                    loadingMessage.textContent = 'No photos have been processed for this event yet.';
+                }
+            } catch (error) {
+                console.error("Could not load event photos:", error);
+                loadingMessage.textContent = 'Failed to load photos. The server may be down.';
+            }
         });
     </script>
-    <style>
-        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-        .animate-fade-in { animation: fade-in 0.5s ease-in-out; }
-    </style>
 </body>
 </html>
