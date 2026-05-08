@@ -53,9 +53,13 @@
 
     <div id="qr-scanner-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-lg p-6 relative w-full max-w-md">
-            <h3 class="text-lg font-bold mb-4">Point Camera at QR Code</h3>
-            <div id="qr-reader" class="w-full"></div>
-            <button id="close-qr-scanner" class="absolute top-2 right-2 px-3 py-1 bg-red-500 text-white rounded-full">&times;</button>
+            <h3 class="text-lg font-bold mb-4 text-center">Scan QR Code</h3>
+            <p class="text-sm text-gray-600 mb-4 text-center">Point your camera at the event QR code</p>
+            <div id="qr-reader" class="w-full border-2 border-gray-300 rounded-lg overflow-hidden"></div>
+            <button id="close-qr-scanner" class="absolute top-2 right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-lg font-bold">&times;</button>
+            <div class="mt-4 text-center">
+                <p class="text-xs text-gray-500">Make sure the QR code is well-lit and clearly visible</p>
+            </div>
         </div>
     </div>
     
@@ -122,33 +126,101 @@
             const html5QrCode = new Html5Qrcode("qr-reader");
 
             const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+                console.log("QR Code detected:", decodedText);
+                
                 html5QrCode.stop().then(() => {
+                    qrModal.classList.add('hidden');
+                    
                     let eventId = decodedText;
+                    
+                    // Try to extract event_id from URL
                     try {
-                        const url = new URL(decodedText);
-                        eventId = url.searchParams.get('event_id') || url.pathname.split('/').pop();
-                    } catch (e) { /* Assume it's just the event_id */ }
+                        if (decodedText.includes('http')) {
+                            const url = new URL(decodedText);
+                            eventId = url.searchParams.get('event_id') || url.pathname.split('/').pop();
+                        }
+                    } catch (e) {
+                        // If it's not a URL, assume it's just the event_id
+                        console.log("Not a URL, using as event_id:", decodedText);
+                    }
+                    
+                    console.log("Redirecting to event:", eventId);
+                    window.location.href = `/event_detail?event_id=${eventId}`;
+                }).catch(err => {
+                    console.error("Error stopping scanner:", err);
+                    qrModal.classList.add('hidden');
                     window.location.href = `/event_detail?event_id=${eventId}`;
                 });
             };
             
+            const qrCodeErrorCallback = (error) => {
+                // Ignore frequent scanning errors, only log actual issues
+                if (error.includes("NotFoundException")) {
+                    return; // No QR code found, this is normal
+                }
+                console.warn("QR Scanner error:", error);
+            };
+            
             scanCameraBtn.addEventListener('click', () => {
                 qrModal.classList.remove('hidden');
-                html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, qrCodeSuccessCallback);
+                
+                // Start with back camera
+                html5QrCode.start(
+                    { facingMode: "environment" }, 
+                    { 
+                        fps: 10, 
+                        qrbox: { width: 250, height: 250 },
+                        aspectRatio: 1.0
+                    }, 
+                    qrCodeSuccessCallback,
+                    qrCodeErrorCallback
+                ).catch(err => {
+                    console.error("Camera start error:", err);
+                    
+                    // Try with front camera if back camera fails
+                    html5QrCode.start(
+                        { facingMode: "user" }, 
+                        { 
+                            fps: 10, 
+                            qrbox: { width: 250, height: 250 },
+                            aspectRatio: 1.0
+                        }, 
+                        qrCodeSuccessCallback,
+                        qrCodeErrorCallback
+                    ).catch(err2 => {
+                        console.error("Front camera also failed:", err2);
+                        alert("Could not access camera. Please check permissions and try again.");
+                        qrModal.classList.add('hidden');
+                    });
+                });
             });
 
             closeQrScannerBtn.addEventListener('click', () => {
-                html5QrCode.stop().then(() => qrModal.classList.add('hidden'));
+                html5QrCode.stop().then(() => {
+                    qrModal.classList.add('hidden');
+                }).catch(err => {
+                    console.error("Error stopping scanner:", err);
+                    qrModal.classList.add('hidden');
+                });
             });
 
             scanFileBtn.addEventListener('click', () => qrFileInput.click());
 
             qrFileInput.addEventListener('change', e => {
                 if (e.target.files.length == 0) return;
+                
                 const imageFile = e.target.files[0];
+                console.log("Scanning file:", imageFile.name);
+                
                 html5QrCode.scanFile(imageFile, true)
-                .then(qrCodeSuccessCallback)
-                .catch(err => alert(`Error scanning file. ${err}`));
+                .then(decodedText => {
+                    console.log("File scan success:", decodedText);
+                    qrCodeSuccessCallback(decodedText, null);
+                })
+                .catch(err => {
+                    console.error("File scan error:", err);
+                    alert(`Could not scan QR code from image. Please try a clearer image or use camera scanning.`);
+                });
             });
 
             fetchEvents();

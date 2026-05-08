@@ -1,17 +1,18 @@
 [
+ 
   {
-    "id": "event_d7511eb5",
-    "name": "Naming ceremony ",
-    "location": "bengaluru",
-    "date": "2024-12-11",
-    "category": "Festival",
-    "image": "/api/events/event_d7511eb5/thumbnail",
-    "thumbnail_filename": "thumbnail_4fa41614.jpeg",
-    "photos_count": 5,
-    "qr_code": "/api/qr_code/event_d7511eb5",
-    "created_by_admin_id": 4,
+    "id": "event_bdc7212c",
+    "name": "Naming Ceremony",
+    "location": "Tumkur",
+    "date": "2025-12-12",
+    "category": "Other",
+    "image": "/api/events/event_bdc7212c/thumbnail",
+    "thumbnail_filename": "thumbnail_884f1cd2.jpg",
+    "photos_count": 8,
+    "qr_code": "/api/qr_code/event_bdc7212c",
+    "created_by_admin_id": 5,
     "created_by_user_id": null,
-    "created_at": "2025-12-06T10:56:45.289732",
+    "created_at": "2025-12-14T15:19:27.264185",
     "sample_photos": []
   }
 ]
