@@ -1,4 +1,0 @@
-# file: C:\Users\admin\AppData\Roaming\Python\Python311\site-packages\numpy\fft\_pocketfft.py
-# hypothesis_version: 6.148.2
-
-['backward', 'fft', 'fft2', 'fftn', 'forward', 'hfft', 'ifft', 'ifft2', 'ifftn', 'ihfft', 'irfft', 'irfft2', 'irfftn', 'numpy.fft', 'ortho', 'rfft', 'rfft2', 'rfftn']

@@ -1,4 +1,0 @@
-# file: C:\Users\admin\AppData\Roaming\Python\Python311\site-packages\PIL\MpoImagePlugin.py
-# hypothesis_version: 6.148.2
-
-[b' ', b'0100', b'II*\x00', b'MPF\x00', b'\xff\xe2', 45056, 45057, 45058, 196608, '.mpo', '<LLLHH', '>H', 'DataOffset', 'JPEG', 'MPO', 'MPO (CIPA DC-007)', 'append_images', 'exif', 'extra', 'image/mpo', 'is_animated', 'jpeg', 'mpoffset', 'n_frames']

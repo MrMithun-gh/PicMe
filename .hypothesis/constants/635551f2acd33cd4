@@ -1,4 +1,0 @@
-# file: C:\Users\admin\AppData\Roaming\Python\Python311\site-packages\qrcode\util.py
-# hypothesis_version: 6.148.2
-
-[b'+$', b',}', b'0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:', b'[', b'\\d', b']', b']*\\Z', b'^', b'^[', b'{', 100, 102, 104, 106, 108, 110, 112, 114, 118, 122, 126, 128, 130, 132, 134, 136, 138, 142, 146, 150, 154, 158, 162, 166, 170, 236, 255, '.', 'Bad mask pattern: ', 'ascii', 'utf-8']

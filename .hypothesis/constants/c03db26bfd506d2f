@@ -1,4 +1,0 @@
-# file: C:\Users\admin\AppData\Roaming\Python\Python311\site-packages\numpy\lib\arraypad.py
-# hypothesis_version: 6.148.2
-
-['C', 'F', 'constant', 'constant_values', 'edge', 'empty', 'end_values', 'even', 'i', 'linear_ramp', 'maximum', 'mean', 'median', 'minimum', 'numpy', 'odd', 'pad', 'reflect', 'reflect_type', 'stat_length', 'symmetric', 'wrap']

@@ -1,4 +1,0 @@
-# file: C:\Users\admin\AppData\Roaming\Python\Python311\site-packages\flask\cli.py
-# hypothesis_version: 6.148.2
-
-[5000, ' (lazy loading)', '$ ', ', ', '-', '--all-methods', '--cert', '--extra-files', '--host', '--key', '--port', '--reload/--no-reload', '--sort', '--version', '-h', '-p', '-s', '.', '.env', '.flaskenv', '.py', '127.0.0.1', ':(?![\\\\/])', '> ', 'Endpoint', 'FLASK', 'FLASK_APP', 'FLASK_RUN_FROM_CLI', 'HEAD', 'Methods', 'OPTIONS', 'PYTHONSTARTUP', 'Rule', 'The port to bind to.', 'WERKZEUG_RUN_MAIN', '__init__', '__init__.py', '__interactivehook__', '__main__', 'adhoc', 'app', 'app.py', 'application', 'auto_envvar_prefix', 'cert', 'cls', 'create_app', 'endpoint', 'eval', 'exec', 'export', 'flask.commands', 'make_app', 'match', 'methods', 'obj', 'params', 'path', 'posix', 'production', 'red', 'routes', 'rule', 'run', 'script_info', 'set', 'shell', 'true', 'utf-8', 'with_appcontext', 'wsgi.py', 'yellow']

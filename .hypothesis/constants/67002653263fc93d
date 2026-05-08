@@ -1,4 +1,0 @@
-# file: C:\Users\admin\AppData\Roaming\Python\Python311\site-packages\PIL\IcoImagePlugin.py
-# hypothesis_version: 6.148.2
-
-[b'\x00', b'\x00\x00', b'\x00\x00\x01\x00', 128, 256, '.ico', '1', '1;I', 'ICO', 'L', 'RGBA', 'Windows Icon', 'append_images', 'bitmap_format', 'bmp', 'dib', 'image/x-icon', 'not an ICO file', 'png', 'raw', 'sizes']

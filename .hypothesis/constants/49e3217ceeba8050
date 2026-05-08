@@ -1,4 +1,0 @@
-# file: C:\Users\admin\AppData\Roaming\Python\Python311\site-packages\werkzeug\_internal.py
-# hypothesis_version: 6.148.2
-
-[b'"', b',', b'.', b':', b';', b'[\\\\].', b"[\\w\\d!#%&\\'~_`><@,:/\\$\\*\\+\\-\\.\\^\\|\\)\\(\\?\\}\\{\\=]", b'\\', b'\\"', b'\\054', b'\\073', b'\\\\', b'\\\\[0-3][0-7][0-7]', 127, 256, 1970, '.', '200 OK', 'Content-Type', 'Expected bytes', 'QUERY_STRING', 'Request', 'StartResponse', 'WSGIApplication', 'WSGIEnvironment', 'Werkzeug', 'X-Powered-By', '_TAccessorValue', '_missing', 'ascii', 'encode', 'environ', 'idna', 'ignore', 'key', 'latin1', 'macgybarchakku', 'no value', 'read only property', 'replace', 'strict', 'text/html', 'utf-8', 'val', 'werkzeug']

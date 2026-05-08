@@ -1,4 +1,0 @@
-# file: C:\Users\admin\AppData\Roaming\Python\Python311\site-packages\PIL\AvifImagePlugin.py
-# hypothesis_version: 6.148.2
-
-[b'avif', b'avis', b'ftyp', b'mif1', b'msf1', 100, 1000, ' [', ', ', '.avif', '.avifs', '4:2:0', ':', 'AVIF', 'AVIF image', 'Invalid saving codec', 'RGB', 'RGBA', 'advanced', 'alpha_premultiplied', 'append_images', 'auto', 'autotiling', 'codec', 'duration', 'exif', 'full', 'icc_profile', 'image/avif', 'max_threads', 'n_frames', 'quality', 'range', 'raw', 'sched_getaffinity', 'speed', 'subsampling', 'tile_cols', 'tile_rows', 'timestamp', 'utf-8', 'xmp']

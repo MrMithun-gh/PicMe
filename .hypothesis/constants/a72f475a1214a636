@@ -1,4 +1,0 @@
-# file: C:\Users\admin\AppData\Roaming\Python\Python311\site-packages\psycopg2\_range.py
-# hypothesis_version: 6.148.2
-
-[b"')", b"'empty'", b"'empty'::", b'(', b', ', b", '", b'NULL', 1082, 1114, 1184, 1700, 3904, 3905, 3906, 3907, 3908, 3909, 3910, 3911, 3912, 3913, 3926, 3927, 90200, '()', '(["\\\\])\\1', '(]', ', ', '.', 'ARRAY', '[', '[)', '[]', '\\1', ']', '_bounds', '_lower', '_upper', 'ascii', 'daterange', 'empty', 'prepare', 'public', 'tsrange', 'tstzrange', 'utf8', '{}({!r}, {!r}, {!r})']

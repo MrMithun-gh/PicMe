@@ -1,4 +1,0 @@
-# file: C:\Users\admin\AppData\Roaming\Python\Python311\site-packages\flask\app.py
-# hypothesis_version: 6.148.2
-
-[4093, 5000, '.', '.htm', '.html', '.xhtml', '.xml', '/', '127.0.0.1', ':', 'APPLICATION_ROOT', 'Blueprint', 'DEBUG', 'ENV', 'FLASK_DEBUG', 'FLASK_ENV', 'FLASK_RUN_FROM_CLI', 'FlaskCliRunner', 'FlaskClient', 'GET', 'HEAD', 'JSONIFY_MIMETYPE', 'JSON_AS_ASCII', 'JSON_SORT_KEYS', 'MAX_CONTENT_LENGTH', 'MAX_COOKIE_SIZE', 'OPTIONS', 'PREFERRED_URL_SCHEME', 'PROPAGATE_EXCEPTIONS', 'SECRET_KEY', 'SERVER_NAME', 'SESSION_COOKIE_NAME', 'SESSION_COOKIE_PATH', 'TESTING', 'TRAP_HTTP_EXCEPTIONS', 'USE_X_SENDFILE', '__file__', '__main__', 'app', 'application/json', 'auto_reload', 'autoescape', 'endpoint', 'g', 'http', 'instance', 'json.dumps_function', 'methods', 'rb', 'required_methods', 'session', 'static', 'te.NoReturn', 'templates', 'threaded', 'true', 'use_debugger', 'use_reloader', 'var', 'werkzeug.local']

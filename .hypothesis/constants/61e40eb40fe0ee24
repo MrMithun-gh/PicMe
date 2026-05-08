@@ -1,4 +1,0 @@
-# file: C:\Users\admin\AppData\Roaming\Python\Python311\site-packages\flask\testing.py
-# hypothesis_version: 6.148.2
-
-[b'?', '/', '127.0.0.1', '?', 'APPLICATION_ROOT', 'Flask', 'FlaskClient', 'HTTP_USER_AGENT', 'PREFERRED_URL_SCHEME', 'REMOTE_ADDR', 'Response', 'SERVER_NAME', 'app', 'environ_base', 'environ_overrides', 'localhost', 'obj']

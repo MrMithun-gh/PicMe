@@ -1,4 +1,0 @@
-# file: C:\Users\admin\AppData\Roaming\Python\Python311\site-packages\PIL\PdfImagePlugin.py
-# hypothesis_version: 6.148.2
-
-[b'q %f 0 0 %f 0 0 cm /image Do Q\n', 72.0, '.pdf', '1', 'A', 'ASCIIHexDecode', 'BitsPerComponent', 'BlackIs1', 'CCITTFaxDecode', 'CMYK', 'ColorSpace', 'Columns', 'DCTDecode', 'DeviceCMYK', 'DeviceGray', 'DeviceRGB', 'Image', 'ImageB', 'ImageC', 'ImageI', 'Indexed', 'JPEG', 'JPEG2000', 'JPXDecode', 'K', 'L', 'LA', 'P', 'PDF', 'RGB', 'RGBA', 'Rows', 'SMask', 'SMaskInData', 'TIFF', 'XObject', 'append', 'append_images', 'application/pdf', 'author', 'creationDate', 'creator', 'dpi', 'flush', 'group4', 'hex', 'keywords', 'libtiff', 'modDate', 'n_frames', 'producer', 'r+b', 'resolution', 'subject', 'title', 'transparency', 'w+b']

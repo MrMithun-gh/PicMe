@@ -1,4 +1,0 @@
-# file: C:\Users\admin\AppData\Roaming\Python\Python311\site-packages\PIL\BlpImagePlugin.py
-# hypothesis_version: 6.148.2
-
-[b'\x00', b'BLP1', b'BLP2', 255, 256, '.blp', '<16I', '<4B', '<6B', '<8B', '<B', '<BB', '<HH', '<HHI', '<I', '<II', '<L', '<b', '<i', 'BGR', 'BLP', 'BLP1', 'BLP2', 'CMYK', 'P', 'RGB', 'RGBA', 'Truncated BLP file', 'blp_version']

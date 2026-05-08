@@ -1,4 +1,0 @@
-# file: C:\Users\admin\AppData\Roaming\Python\Python311\site-packages\PIL\Jpeg2KImagePlugin.py
-# hypothesis_version: 6.148.2
-
-[b'\x00\x00\x00\x0cjP  \r\n\x87\n', b'.j2k', b'colr', b'ftyp', b'ihdr', b'jp2c\xffO\xffQ', b'jp2h', b'jpx ', b'pclr', b'res ', b'resc', b'\xffO\xffQ', 100, 127, 144, 217, 254, 10000, '.j2c', '.j2k', '.jp2', '.jpc', '.jpf', '.jpx', '>', '>4s', '>B', '>BBBI', '>HB', '>HHHHBB', '>HHIIIIIIIIH', '>I4s', '>IIHB', '>Q', 'B', 'CMYK', 'I;16', 'JPEG2000', 'L', 'LA', 'LRCP', 'Malformed JP2 header', 'P', 'PA', 'RGB', 'RGBA', 'cinema_mode', 'codeblock_size', 'comment', 'dpi', 'fileno', 'image/jp2', 'image/jpx', 'irreversible', 'j2k', 'jp2', 'jpeg2k', 'mct', 'no', 'no_jp2', 'not a JPEG 2000 file', 'num_resolutions', 'offset', 'plt', 'precinct_size', 'progression', 'quality_layers', 'quality_mode', 'rates', 'signed', 'tile_offset', 'tile_size']

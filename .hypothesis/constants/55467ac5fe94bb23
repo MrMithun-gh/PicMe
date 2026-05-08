@@ -1,4 +1,0 @@
-# file: C:\Users\admin\Desktop\PicMe\backend\face_utils.py
-# hypothesis_version: 6.148.2
-
-[0.0, 0.15, 0.19, 0.22, 0.24, 0.3, 0.7, 1.0, 2.0, 3.5, 80.0, 150.0, 'AUTO', 'BLINK', 'CLOSED', 'HEAD_TURN', 'OPEN', 'avg_motion', 'blink_count', 'blink_ok', 'challenge_type', 'head_turn_ok', 'head_turn_score', 'motion_ok', 'passed', 'reason']

@@ -1,4 +1,0 @@
-# file: C:\Users\admin\AppData\Roaming\Python\Python311\site-packages\werkzeug\local.py
-# hypothesis_version: 6.148.2
-
-['ContextVar', 'F', 'Local', 'LocalProxy', 'LocalStack', 'StartResponse', 'WSGIApplication', 'WSGIEnvironment', '_LocalProxy__local', '_LocalProxy__name', '__get__', '__ident_func__', '__local', '__name', '__release_local__', '__wrapped__', '_storage', 'bind_f', 'class_value', 'contextvars', 'eventlet', 'fallback', 'gevent', 'local', 'local_storage', 'name', 'object unbound', 'stack', 'threading']

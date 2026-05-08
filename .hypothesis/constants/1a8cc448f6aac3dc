@@ -1,4 +1,0 @@
-# file: C:\Users\admin\AppData\Roaming\Python\Python311\site-packages\werkzeug\useragents.py
-# hypothesis_version: 6.148.2
-
-[' cros ', '(sun|i86)os', ')', 'Baiduspider', 'HTTP_USER_AGENT', '_UserAgent', 'aix', 'amiga', 'android', 'aol', 'ask', 'ask jeeves', 'baidu', 'bing', 'bingbot', 'blackberry', 'blackberry|playbook', 'bsd', 'camino', 'chrome', 'chromeos', 'chrome|crios', 'dragonfly', 'dragonflybsd', 'edge', 'edge|edg', 'firefox', 'freebsd', 'galeon', 'google', 'googlebot', 'hp-?ux', 'hpux', 'ipad', 'iphone', 'iphone|ios', 'irix', 'k-meleon', 'kmeleon', 'konqueror', 'links', 'linux', 'lynx', 'macos', 'mozilla', 'msie', 'msn', 'msnbot', 'netbsd', 'netscape', 'nintendo\\s+wii', 'openbsd', 'opera', 'opera|opr', 'safari', 'safari|version', 'sco', 'sco|unix_sv', 'seamonkey', 'solaris', 'symbian', 'trident/.+? rv:', 'webkit', 'wii', 'win', 'windows', 'x11\\b|lin(\\b|ux)?', 'yahoo']

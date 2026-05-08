@@ -1,4 +1,0 @@
-# file: C:\Users\admin\AppData\Roaming\Python\Python311\site-packages\werkzeug\wsgi.py
-# hypothesis_version: 6.148.2
-
-[b'(', b')', 1024, 8192, '/', '443', '80', ':', ":&%=+$!*'(),", '@', 'CONTENT_LENGTH', 'ClosingIterator', 'FileWrapper', 'HTTP_HOST', 'LimitedStream', 'PATH_INFO', 'QUERY_STRING', 'SCRIPT_NAME', 'SERVER_NAME', 'SERVER_PORT', 'WSGIApplication', 'WSGIEnvironment', '_RangeWrapper', 'chunked', 'close', 'host', 'http', 'https', 'latin1', 'path', 'query_string', 'read', 'replace', 'root_path', 'scheme', 'seek', 'seekable', 'tell', 'utf-8', 'werkzeug.url_quote', 'wsgi.file_wrapper', 'wsgi.input', 'wsgi.url_scheme']

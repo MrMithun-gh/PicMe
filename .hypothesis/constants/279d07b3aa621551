@@ -1,4 +1,0 @@
-# file: C:\Users\admin\Desktop\PicMe\backend\face_model.py
-# hypothesis_version: 6.148.2
-
-[0.55, 0.6, 'known_faces.dat', 'rb', 'wb']

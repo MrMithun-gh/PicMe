@@ -1,4 +1,0 @@
-# file: C:\Users\admin\AppData\Roaming\Python\Python311\site-packages\werkzeug\urls.py
-# hypothesis_version: 6.148.2
-
-[b' ', b'%', b'&', b'+', b':', b'@', b'[', b']', 128, 256, 65535, '#', '&', '+', '.', '..', './', '/', "/%+$!*'(),", '//', '/:', '/:%', '/:%@', '/?#', '0123456789', '127.0.0.1', ':', ":&%=+$!*'(),", ':/', ":/?#[]@!$&'()*+,;=%", '::1', '=', '?', '@', 'BaseURL', 'BytesURL', 'Invalid IPv6 URL', 'URL', '[', '\\', ']', '^[a-zA-Z0-9+-.]+$', '_', '__', 'ascii', 'ds.MultiDict', 'file', 'file://', 'ignore', 'latin1', 'localhost', 'nt', 'posix', 'replace', 'strict', 'utf-8', 'werkzeug.url_quote', 'windows', '|/', '|:']

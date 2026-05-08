@@ -1,4 +1,0 @@
-# file: C:\Users\admin\AppData\Roaming\Python\Python311\site-packages\PIL\WmfImagePlugin.py
-# hypothesis_version: 6.148.2
-
-[b'\x01\x00\x00\x00', b'\x01\x00\t\x00', b' EMF', b'\xd7\xcd\xc6\x9a\x00\x00', 2540.0, '.emf', '.wmf', 'BGR', 'Invalid inch', 'RGB', 'WMF', 'Windows Metafile', 'dpi', 'drawwmf', 'raw', 'save', 'wmf_bbox']

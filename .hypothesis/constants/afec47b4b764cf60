@@ -1,4 +1,0 @@
-# file: C:\Users\admin\AppData\Roaming\Python\Python311\site-packages\werkzeug\wrappers\request.py
-# hypothesis_version: 6.148.2
-
-['CONTENT_TYPE', 'GET', 'PATH_INFO', 'QUERY_STRING', 'REMOTE_ADDR', 'REMOTE_USER', 'REQUEST_METHOD', 'Request', 'SCRIPT_NAME', 'WSGIApplication', 'WSGIEnvironment', '_cached_data', 'charset', 'files', 'form', 'http', 'ignore', 'latin1', 'shallow', 'stream', 'te.Literal[False]', 'te.Literal[True]', 'werkzeug.request', 'wsgi.input', 'wsgi.multiprocess', 'wsgi.multithread', 'wsgi.run_once', 'wsgi.url_scheme']

@@ -1,4 +1,0 @@
-# file: C:\Users\admin\AppData\Roaming\Python\Python311\site-packages\PIL\IcnsImagePlugin.py
-# hypothesis_version: 6.148.2
-
-[b'\x00\x00\x00\x00', b'\x00\x00\x00\x0cjP  \r\n\x87\n', b'\r\n\x87\n', b'TOC ', b'h8mk', b'ic07', b'ic08', b'ic09', b'ic10', b'ic11', b'ic12', b'ic13', b'ic14', b'icns', b'icp4', b'icp5', b'icp6', b'ih32', b'il32', b'is32', b'it32', b'l8mk', b's8mk', b't8mk', b'\x89PNG\r\n\x1a\n', b'\xffO\xffQ', 125, 128, 256, 512, 1024, '.icns', '>4sI', '>i', 'A', 'ICNS', 'L', 'Mac OS icns resource', 'RGB', 'RGBA', '__main__', 'append_images', 'flush', 'image/icns', 'invalid block header', 'jpg_2000', 'not an icns file', 'out.png', 'png', 'raw', 'rb', 'sizes', 'windows']
